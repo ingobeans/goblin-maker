@@ -29,7 +29,7 @@ impl<'a> GoblinMaker<'a> {
             width: 100,
         };
         for i in 0..100 {
-            level.tiles[i] = [1, 0];
+            level.tiles[i + 49 * 100] = [1, 0];
         }
 
         Self {
@@ -50,7 +50,7 @@ impl<'a> GoblinMaker<'a> {
         let mouse_x = mouse_x / scale_factor;
         let mouse_y = mouse_y / scale_factor;
 
-        self.player.update(delta_time);
+        self.player.update(delta_time, &self.level);
         self.pixel_camera.target = self.player.camera_pos.floor();
         set_camera(&self.pixel_camera);
         clear_background(Color::from_hex(0x29adff));

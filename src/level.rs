@@ -11,7 +11,7 @@ impl Level {
         self.tiles.len() / self.width
     }
     pub fn get_tile(&self, x: usize, y: usize) -> [u8; 2] {
-        if x > self.width || y > self.height() {
+        if x >= self.width || y >= self.height() {
             return [0, 0];
         }
         self.tiles[x + y * self.width]
@@ -28,7 +28,6 @@ impl LevelRenderer {
             (level.width * 8) as f32 / 2.0,
             (level.height() * 8) as f32 / 2.0,
         );
-        dbg!(camera.target * 2.0);
         set_camera(&camera);
         clear_background(BLACK.with_alpha(0.0));
         clear_background(PINK);

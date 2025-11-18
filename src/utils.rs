@@ -3,8 +3,11 @@ use macroquad::prelude::*;
 pub const SCREEN_WIDTH: f32 = 256.0 * 2.0;
 pub const SCREEN_HEIGHT: f32 = 144.0 * 2.0;
 
-pub const HORIZONTAL_TILES: usize = 100;
-pub const VERTICAL_TILES: usize = 50;
+pub const MAX_VELOCITY: f32 = 190.0;
+pub const GROUND_FRICTION: f32 = 0.11 * 60.0;
+pub const AIR_DRAG: f32 = 0.07 * 60.0;
+pub const GRAVITY: f32 = 0.35 * 3600.0;
+pub const ACCELERATION: f32 = 3600.0;
 
 pub fn create_camera(w: f32, h: f32) -> Camera2D {
     let rt = render_target(w as u32, h as u32);
