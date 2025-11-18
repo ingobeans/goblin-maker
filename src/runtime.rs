@@ -9,15 +9,15 @@ use macroquad::{miniquad::window::screen_size, prelude::*};
 pub struct GoblinRuntime<'a> {
     assets: &'a Assets,
     player: Player,
-    level: &'a Level,
+    level: Level,
     level_renderer: LevelRenderer,
     pixel_camera: Camera2D,
 }
 
 impl<'a> GoblinRuntime<'a> {
-    pub fn new(assets: &'a Assets, level: &'a Level) -> Self {
+    pub fn new(assets: &'a Assets, level: Level) -> Self {
         Self {
-            level_renderer: LevelRenderer::new(level, assets, BLACK.with_alpha(0.0)),
+            level_renderer: LevelRenderer::new(&level, assets, BLACK.with_alpha(0.0)),
             assets,
             player: Player::new(vec2(0.0, 0.0)),
             level,

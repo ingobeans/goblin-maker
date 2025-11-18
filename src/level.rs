@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 
 use crate::{assets::Assets, utils::*};
 
+#[derive(Clone)]
 pub struct Level {
     pub tiles: Vec<[u8; 2]>,
     pub width: usize,

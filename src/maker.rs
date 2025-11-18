@@ -8,7 +8,7 @@ use macroquad::{miniquad::window::screen_size, prelude::*};
 
 pub struct GoblinMaker<'a> {
     assets: &'a Assets,
-    level: Level,
+    pub level: Level,
     pixel_camera: Camera2D,
     level_renderer: LevelRenderer,
     camera_pos: Vec2,
@@ -59,12 +59,14 @@ impl<'a> GoblinMaker<'a> {
         let mouse_delta = mouse_delta_position();
         let scroll = mouse_wheel();
 
+        // handle panning with middle-mouse
         if is_mouse_button_down(MouseButton::Middle) {
             self.camera_pos.x +=
                 mouse_delta.x as f32 * actual_screen_width / scale_factor / 2. / self.camera_zoom;
             self.camera_pos.y +=
                 mouse_delta.y as f32 * actual_screen_height / scale_factor / 2. / self.camera_zoom;
         }
+        // handle scrolling
         if scroll.1 != 0.0 {
             let amt = if scroll.1 > 0.0 {
                 1.0 / SCROLL_AMT
@@ -86,7 +88,6 @@ impl<'a> GoblinMaker<'a> {
             self.camera_pos.y =
                 old_mouse_world_y + SCREEN_HEIGHT / 2.0 - mouse_y / self.camera_zoom;
         }
-        //self.pixel_camera.target = self.camera_pos.floor();
         set_camera(&self.pixel_camera);
         clear_background(SKY_COLOR);
 
