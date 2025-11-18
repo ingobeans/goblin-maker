@@ -158,7 +158,7 @@ pub fn update_physicsbody(
     }
 
     for (tx, ty) in tiles_y {
-        let tile = world.get_tile(tx as usize, ty as usize)[0];
+        let tile = world.get_tile((tx / 2.0) as usize, (ty / 2.0) as usize)[0];
         if tile != 0 {
             let c = if velocity.y < 0.0 {
                 tile_y.floor() * 8.0
@@ -183,7 +183,7 @@ pub fn update_physicsbody(
     }
 
     for (tx, ty) in tiles_x {
-        let tile = world.get_tile(tx as usize, ty as usize)[0];
+        let tile = world.get_tile((tx / 2.0) as usize, (ty / 2.0) as usize)[0];
         if tile != 0 {
             let c = if velocity.x < 0.0 {
                 tile_x.floor() * 8.0

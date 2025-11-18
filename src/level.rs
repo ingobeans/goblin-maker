@@ -29,7 +29,13 @@ impl<'a> LevelRenderer<'a> {
     pub fn set_tile(&mut self, level: &mut Level, x: usize, y: usize, tile: [u8; 2]) {
         level.tiles[x + y * level.width] = tile;
         set_camera(&self.camera);
-        draw_rectangle((x * 8) as f32, (y * 8) as f32, 8.0, 8.0, self.clear_color);
+        draw_rectangle(
+            (x * 16) as f32,
+            (y * 16) as f32,
+            16.0,
+            16.0,
+            self.clear_color,
+        );
 
         for tile in tile {
             if tile == 0 {
@@ -37,8 +43,8 @@ impl<'a> LevelRenderer<'a> {
             }
             let tile = tile - 1;
             self.assets.tileset.draw_tile(
-                (x * 8) as f32,
-                (y * 8) as f32,
+                (x * 16) as f32,
+                (y * 16) as f32,
                 (tile % 32) as f32,
                 (tile / 32) as f32,
                 None,
@@ -53,8 +59,8 @@ impl<'a> LevelRenderer<'a> {
                 }
                 let tile = tile - 1;
                 assets.tileset.draw_tile(
-                    ((index % level.width) * 8) as f32,
-                    ((index / level.width) * 8) as f32,
+                    ((index % level.width) * 16) as f32,
+                    ((index / level.width) * 16) as f32,
                     (tile % 32) as f32,
                     (tile / 32) as f32,
                     None,
@@ -63,10 +69,10 @@ impl<'a> LevelRenderer<'a> {
         }
     }
     pub fn new(level: &Level, assets: &'a Assets, clear_color: Color) -> Self {
-        let mut camera = create_camera((level.width * 8) as f32, (level.height() * 8) as f32);
+        let mut camera = create_camera((level.width * 16) as f32, (level.height() * 16) as f32);
         camera.target = vec2(
-            (level.width * 8) as f32 / 2.0,
-            (level.height() * 8) as f32 / 2.0,
+            (level.width * 16) as f32 / 2.0,
+            (level.height() * 16) as f32 / 2.0,
         );
         set_camera(&camera);
         clear_background(clear_color);
@@ -74,7 +80,7 @@ impl<'a> LevelRenderer<'a> {
         Self::draw_level(level, assets);
         Self {
             assets,
-            size: vec2((level.width * 8) as f32, (level.height() * 8) as f32),
+            size: vec2((level.width * 16) as f32, (level.height() * 16) as f32),
             camera,
             clear_color,
         }

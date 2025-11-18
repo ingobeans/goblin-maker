@@ -53,8 +53,8 @@ impl<'a> GoblinMaker<'a> {
         let mouse_x = mouse_x / scale_factor;
         let mouse_y = mouse_y / scale_factor;
         let (mouse_tile_x, mouse_tile_y) = (
-            (((mouse_x) / self.camera_zoom + self.camera_pos.x) / 8.0).floor(),
-            (((mouse_y) / self.camera_zoom + self.camera_pos.y) / 8.0).floor(),
+            (((mouse_x) / self.camera_zoom + self.camera_pos.x) / 16.0).floor(),
+            (((mouse_y) / self.camera_zoom + self.camera_pos.y) / 16.0).floor(),
         );
         let cursor_tile = if mouse_tile_x >= 0.0
             && mouse_tile_y >= 0.0
@@ -129,9 +129,9 @@ impl<'a> GoblinMaker<'a> {
             },
         );
         let player_pos = vec2(
-            (self.level.width * 4 - 4) as f32 * scale_factor * self.camera_zoom
+            (self.level.width * 8 - 4) as f32 * scale_factor * self.camera_zoom
                 - self.camera_pos.x * scale_factor * self.camera_zoom,
-            (self.level.height() * 4 - 8) as f32 * scale_factor * self.camera_zoom
+            (self.level.height() * 8 - 8) as f32 * scale_factor * self.camera_zoom
                 - self.camera_pos.y * scale_factor * self.camera_zoom,
         );
         let params = DrawTextureParams {

@@ -19,7 +19,7 @@ impl<'a> GoblinRuntime<'a> {
         Self {
             level_renderer: LevelRenderer::new(&level, assets, BLACK.with_alpha(0.0)),
             assets,
-            player: Player::new(vec2((level.width * 4) as f32, (level.height() * 4) as f32)),
+            player: Player::new(vec2((level.width * 8) as f32, (level.height() * 8) as f32)),
             level,
             pixel_camera: create_camera(SCREEN_WIDTH, SCREEN_HEIGHT),
         }

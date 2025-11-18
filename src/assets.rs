@@ -14,7 +14,7 @@ impl Default for Assets {
         Self {
             tileset: Spritesheet::new(
                 load_ase_texture(include_bytes!("../assets/tileset.ase"), None),
-                8.0,
+                16.0,
             ),
             player_torso: AnimationsGroup::from_file(include_bytes!("../assets/player_torso.ase")),
             player_legs: AnimationsGroup::from_file(include_bytes!("../assets/player_legs.ase")),
