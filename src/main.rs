@@ -84,10 +84,24 @@ impl<'a> GoblinMaker<'a> {
                 ..Default::default()
             },
         );
+
+        draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);
     }
 }
 
-#[macroquad::main("goblin maker")]
+fn window_conf() -> Conf {
+    Conf {
+        window_title: "goblin maker".to_string(),
+        window_width: SCREEN_WIDTH as i32 * 2,
+        window_height: SCREEN_HEIGHT as i32 * 2,
+        platform: miniquad::conf::Platform {
+            //swap_interval: Some(0),
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+#[macroquad::main(window_conf)]
 async fn main() {
     println!("goblin maker v{VERSION}");
     let assets = Assets::default();

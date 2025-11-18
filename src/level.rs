@@ -30,7 +30,6 @@ impl LevelRenderer {
         );
         set_camera(&camera);
         clear_background(BLACK.with_alpha(0.0));
-        clear_background(PINK);
 
         for (index, tile_bundle) in level.tiles.iter().enumerate() {
             for tile in tile_bundle {
