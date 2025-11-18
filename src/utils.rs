@@ -9,6 +9,12 @@ pub const AIR_DRAG: f32 = 0.07 * 60.0;
 pub const GRAVITY: f32 = 0.35 * 3600.0;
 pub const ACCELERATION: f32 = 3600.0;
 
+pub const SCROLL_AMT: f32 = 1.1;
+pub const MIN_ZOOM: f32 = 0.001;
+
+pub const SKY_COLOR: Color = Color::from_hex(0x29adff);
+pub const MAKER_BG_COLOR: Color = Color::from_hex(0x365987);
+
 pub fn create_camera(w: f32, h: f32) -> Camera2D {
     let rt = render_target(w as u32, h as u32);
     rt.texture.set_filter(FilterMode::Nearest);

@@ -20,17 +20,11 @@ impl Level {
 
 pub struct LevelRenderer {
     pub camera: Camera2D,
+    pub size: Vec2,
+    pub clear_color: Color,
 }
 impl LevelRenderer {
-    pub fn new(level: &Level, assets: &Assets) -> Self {
-        let mut camera = create_camera((level.width * 8) as f32, (level.height() * 8) as f32);
-        camera.target = vec2(
-            (level.width * 8) as f32 / 2.0,
-            (level.height() * 8) as f32 / 2.0,
-        );
-        set_camera(&camera);
-        clear_background(BLACK.with_alpha(0.0));
-
+    pub fn draw_level(level: &Level, assets: &Assets) {
         for (index, tile_bundle) in level.tiles.iter().enumerate() {
             for tile in tile_bundle {
                 if *tile == 0 {
@@ -46,6 +40,21 @@ impl LevelRenderer {
                 );
             }
         }
-        Self { camera }
+    }
+    pub fn new(level: &Level, assets: &Assets, clear_color: Color) -> Self {
+        let mut camera = create_camera((level.width * 8) as f32, (level.height() * 8) as f32);
+        camera.target = vec2(
+            (level.width * 8) as f32 / 2.0,
+            (level.height() * 8) as f32 / 2.0,
+        );
+        set_camera(&camera);
+        clear_background(clear_color);
+
+        Self::draw_level(level, assets);
+        Self {
+            size: vec2((level.width * 8) as f32, (level.height() * 8) as f32),
+            camera,
+            clear_color,
+        }
     }
 }
