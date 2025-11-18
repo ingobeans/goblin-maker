@@ -10,7 +10,7 @@ pub struct GoblinRuntime<'a> {
     assets: &'a Assets,
     player: Player,
     level: Level,
-    level_renderer: LevelRenderer,
+    level_renderer: LevelRenderer<'a>,
     pixel_camera: Camera2D,
 }
 
@@ -19,7 +19,7 @@ impl<'a> GoblinRuntime<'a> {
         Self {
             level_renderer: LevelRenderer::new(&level, assets, BLACK.with_alpha(0.0)),
             assets,
-            player: Player::new(vec2(0.0, 0.0)),
+            player: Player::new(vec2((level.width * 4) as f32, (level.height() * 4) as f32)),
             level,
             pixel_camera: create_camera(SCREEN_WIDTH, SCREEN_HEIGHT),
         }
