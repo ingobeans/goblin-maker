@@ -8,6 +8,12 @@ pub struct Assets {
     pub tileset: Spritesheet,
     pub player_torso: AnimationsGroup,
     pub player_legs: AnimationsGroup,
+
+    // ui
+    pub tile_btn: Animation,
+    pub decoration_btn: Animation,
+    pub character_btn: Animation,
+    pub handle_btn: Animation,
 }
 impl Default for Assets {
     fn default() -> Self {
@@ -18,6 +24,11 @@ impl Default for Assets {
             ),
             player_torso: AnimationsGroup::from_file(include_bytes!("../assets/player_torso.ase")),
             player_legs: AnimationsGroup::from_file(include_bytes!("../assets/player_legs.ase")),
+
+            tile_btn: Animation::from_file(include_bytes!("../assets/ui/tile_btn.ase")),
+            decoration_btn: Animation::from_file(include_bytes!("../assets/ui/decoration_btn.ase")),
+            character_btn: Animation::from_file(include_bytes!("../assets/ui/character_btn.ase")),
+            handle_btn: Animation::from_file(include_bytes!("../assets/ui/handle_btn.ase")),
         }
     }
 }
@@ -146,11 +157,10 @@ impl Spritesheet {
 }
 
 pub struct Animation {
-    frames: Vec<(Texture2D, u32)>,
+    pub frames: Vec<(Texture2D, u32)>,
     pub total_length: u32,
 }
 impl Animation {
-    #[expect(dead_code)]
     pub fn from_file(bytes: &[u8]) -> Self {
         let ase = AsepriteFile::read(bytes).unwrap();
         let mut frames = Vec::new();
@@ -166,6 +176,7 @@ impl Animation {
             let duration = frame.duration();
             total_length += duration;
             let texture = Texture2D::from_image(&new);
+            texture.set_filter(FilterMode::Nearest);
             frames.push((texture, duration));
         }
         Self {

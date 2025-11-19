@@ -7,6 +7,7 @@ mod level;
 mod maker;
 mod player;
 mod runtime;
+mod ui;
 mod utils;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

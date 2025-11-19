@@ -1,9 +1,16 @@
 use crate::{
     assets::Assets,
     level::{Level, LevelRenderer},
+    ui::*,
     utils::*,
 };
 use macroquad::{miniquad::window::screen_size, prelude::*};
+
+enum Dragging {
+    No,
+    UiOwned,
+    WorldOwned,
+}
 
 pub struct GoblinMaker<'a> {
     assets: &'a Assets,
@@ -11,6 +18,8 @@ pub struct GoblinMaker<'a> {
     level_renderer: LevelRenderer<'a>,
     camera_pos: Vec2,
     camera_zoom: f32,
+    sidebar: (f32, u8, f32),
+    dragging: Dragging,
 }
 
 impl<'a> GoblinMaker<'a> {
@@ -45,9 +54,12 @@ impl<'a> GoblinMaker<'a> {
             level,
             camera_zoom,
             camera_pos,
+            sidebar: (0.0, 0, -1.0),
+            dragging: Dragging::No,
         }
     }
     pub fn update(&mut self) {
+        let delta_time = get_frame_time();
         let (actual_screen_width, actual_screen_height) = screen_size();
         let scale_factor =
             (actual_screen_width / SCREEN_WIDTH).min(actual_screen_height / SCREEN_HEIGHT);
@@ -67,9 +79,83 @@ impl<'a> GoblinMaker<'a> {
         } else {
             None
         };
+        if !is_mouse_button_down(MouseButton::Left) {
+            self.dragging = Dragging::No;
+        }
+
+        let mut scroll = mouse_wheel().1;
+        let clicking = is_mouse_button_pressed(MouseButton::Left);
+
+        self.sidebar.0 = (self.sidebar.0 + delta_time * self.sidebar.2 * 12.0).clamp(-0.0, 1.0);
+        let sidebar_size = vec2(60.0, 277.0);
+
+        let sidebar_pos = vec2(
+            -sidebar_size.x + self.sidebar.0 * (sidebar_size.x + 2.0),
+            10.0,
+        );
+        let rect = UIRect::new(
+            sidebar_pos * scale_factor,
+            sidebar_size * scale_factor,
+            MAKER_BG_COLOR,
+            (scale_factor, BLACK),
+        );
+        let handle_texture = if self.sidebar.2 < 0.0 {
+            (
+                &self.assets.handle_btn.frames[0].0,
+                &self.assets.handle_btn.frames[1].0,
+            )
+        } else {
+            (
+                &self.assets.handle_btn.frames[2].0,
+                &self.assets.handle_btn.frames[3].0,
+            )
+        };
+        let handle_btn = UIImageButton::new(
+            (sidebar_pos + vec2(sidebar_size.x + 2.0, (sidebar_size.y - 9.0) / 2.0)) * scale_factor,
+            handle_texture.0,
+            handle_texture.1,
+            scale_factor,
+            false,
+        );
+        if clicking && handle_btn.is_hovered() {
+            self.sidebar.2 *= -1.0;
+        }
+
+        let button_offset = vec2(19.0, 0.0);
+
+        let mut tab_btns = Vec::new();
+        for (i, t) in [
+            &self.assets.tile_btn.frames,
+            &self.assets.decoration_btn.frames,
+            &self.assets.character_btn.frames,
+        ]
+        .iter()
+        .enumerate()
+        {
+            let btn = UIImageButton::new(
+                (sidebar_pos + 3.0 + button_offset * i as f32) * scale_factor,
+                &t[0].0,
+                &t[1].0,
+                scale_factor,
+                self.sidebar.1 == i as u8,
+            );
+            if btn.is_hovered() && clicking {
+                self.sidebar.1 = i as u8;
+            }
+            tab_btns.push(btn);
+        }
+
+        let ui_hovered =
+            rect.is_hovered() || handle_btn.is_hovered() || tab_btns.iter().any(|f| f.is_hovered());
+        if ui_hovered && clicking {
+            self.dragging = Dragging::UiOwned;
+        } else if clicking {
+            self.dragging = Dragging::WorldOwned;
+        }
+
+        let clicking_ui = matches!(self.dragging, Dragging::UiOwned);
 
         let mouse_delta = mouse_delta_position();
-        let mut scroll = mouse_wheel().1;
         let mut scroll_origin = vec2(mouse_x, mouse_y);
         if scroll == 0.0 {
             if is_key_pressed(KeyCode::Up) {
@@ -88,14 +174,14 @@ impl<'a> GoblinMaker<'a> {
         }
 
         // handle panning with middle-mouse
-        if is_mouse_button_down(MouseButton::Middle) {
+        if !clicking_ui && is_mouse_button_down(MouseButton::Middle) {
             self.camera_pos.x +=
                 mouse_delta.x as f32 * actual_screen_width / scale_factor / 2.0 / self.camera_zoom;
             self.camera_pos.y +=
                 mouse_delta.y as f32 * actual_screen_height / scale_factor / 2.0 / self.camera_zoom;
         }
         // handle scrolling
-        if scroll != 0.0 {
+        if !clicking_ui && scroll != 0.0 {
             let amt = if scroll > 0.0 {
                 1.0 / SCROLL_AMT
             } else {
@@ -119,7 +205,8 @@ impl<'a> GoblinMaker<'a> {
         }
 
         // handle clicking
-        if is_mouse_button_down(MouseButton::Left)
+        if !clicking_ui
+            && is_mouse_button_down(MouseButton::Left)
             && let Some((tx, ty)) = cursor_tile
         {
             self.level_renderer
@@ -183,5 +270,10 @@ impl<'a> GoblinMaker<'a> {
 
         draw_rectangle(0.0, 0.0, actual_screen_width, actual_screen_height, WHITE);
         gl_use_default_material();
+        rect.draw();
+        handle_btn.draw();
+        for btn in tab_btns {
+            btn.draw();
+        }
     }
 }

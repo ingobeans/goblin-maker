@@ -1,9 +1,10 @@
 [package]
 name = "goblin-maker"
-version = "0.1.11"
+version = "0.1.12"
 edition = "2024"
 
 [dependencies]
 asefile = "0.3.8"
 macroquad = "0.4.14"
 image = "0.24.9"
+impl-new-derive = "0.1.3"
