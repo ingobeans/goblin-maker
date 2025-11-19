@@ -33,7 +33,7 @@ impl<'a> GoblinMaker<'a> {
         let (mouse_x, mouse_y) = (screen.x / 2.0, screen.y / 2.0);
         let old_mouse_world_x = mouse_x + camera_pos.x - SCREEN_WIDTH / 2.0;
         let old_mouse_world_y = mouse_y + camera_pos.y - SCREEN_HEIGHT / 2.0;
-        camera_zoom /= 2.0;
+        camera_zoom /= 0.75;
         camera_zoom = camera_zoom.max(MIN_ZOOM);
         camera_pos.x = old_mouse_world_x + SCREEN_WIDTH / 2.0 - mouse_x / camera_zoom;
         camera_pos.y = old_mouse_world_y + SCREEN_HEIGHT / 2.0 - mouse_y / camera_zoom;
@@ -69,7 +69,23 @@ impl<'a> GoblinMaker<'a> {
         };
 
         let mouse_delta = mouse_delta_position();
-        let scroll = mouse_wheel();
+        let mut scroll = mouse_wheel().1;
+        let mut scroll_origin = vec2(mouse_x, mouse_y);
+        if scroll == 0.0 {
+            if is_key_pressed(KeyCode::Up) {
+                scroll += 1.0;
+                scroll_origin = vec2(
+                    actual_screen_width / 2.0 / scale_factor,
+                    actual_screen_height / 2.0 / scale_factor,
+                );
+            } else if is_key_pressed(KeyCode::Down) {
+                scroll -= 1.0;
+                scroll_origin = vec2(
+                    actual_screen_width / 2.0 / scale_factor,
+                    actual_screen_height / 2.0 / scale_factor,
+                );
+            }
+        }
 
         // handle panning with middle-mouse
         if is_mouse_button_down(MouseButton::Middle) {
@@ -79,26 +95,27 @@ impl<'a> GoblinMaker<'a> {
                 mouse_delta.y as f32 * actual_screen_height / scale_factor / 2.0 / self.camera_zoom;
         }
         // handle scrolling
-        if scroll.1 != 0.0 {
-            let amt = if scroll.1 > 0.0 {
+        if scroll != 0.0 {
+            let amt = if scroll > 0.0 {
                 1.0 / SCROLL_AMT
             } else {
                 SCROLL_AMT
             };
             // store old mouse position (in world position)
             let old_mouse_world_x =
-                mouse_x / self.camera_zoom + self.camera_pos.x - SCREEN_WIDTH / 2.0;
+                scroll_origin.x / self.camera_zoom + self.camera_pos.x - SCREEN_WIDTH / 2.0;
             let old_mouse_world_y =
-                mouse_y / self.camera_zoom + self.camera_pos.y - SCREEN_HEIGHT / 2.0;
+                scroll_origin.y / self.camera_zoom + self.camera_pos.y - SCREEN_HEIGHT / 2.0;
 
             // update grid size
             self.camera_zoom /= amt;
             self.camera_zoom = self.camera_zoom.max(MIN_ZOOM);
             // move camera position to zoom towards cursor
             // by comparing old world mouse position
-            self.camera_pos.x = old_mouse_world_x + SCREEN_WIDTH / 2.0 - mouse_x / self.camera_zoom;
+            self.camera_pos.x =
+                old_mouse_world_x + SCREEN_WIDTH / 2.0 - scroll_origin.x / self.camera_zoom;
             self.camera_pos.y =
-                old_mouse_world_y + SCREEN_HEIGHT / 2.0 - mouse_y / self.camera_zoom;
+                old_mouse_world_y + SCREEN_HEIGHT / 2.0 - scroll_origin.y / self.camera_zoom;
         }
 
         // handle clicking
@@ -111,6 +128,7 @@ impl<'a> GoblinMaker<'a> {
 
         set_default_camera();
         clear_background(MAKER_BG_COLOR);
+
         draw_texture_ex(
             &self
                 .level_renderer
@@ -157,5 +175,13 @@ impl<'a> GoblinMaker<'a> {
             WHITE,
             params,
         );
+        gl_use_material(&GRID_MATERIAL);
+        GRID_MATERIAL.set_uniform("zoom", self.camera_zoom);
+        GRID_MATERIAL.set_uniform("scale", scale_factor);
+        GRID_MATERIAL.set_uniform("offset", self.camera_pos);
+        GRID_MATERIAL.set_uniform("screen", vec2(actual_screen_width, actual_screen_height));
+
+        draw_rectangle(0.0, 0.0, actual_screen_width, actual_screen_height, WHITE);
+        gl_use_default_material();
     }
 }
