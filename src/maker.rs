@@ -25,14 +25,16 @@ impl<'a> GoblinMaker<'a> {
         };
         let level_renderer = LevelRenderer::new(&level, assets, SKY_COLOR);
 
-        // all these calculations are literally just to zoom out the viewport around the center of the level
+        let default_zoom_amt = 0.8;
+
+        // all these calculations are literally just to zoom the viewport around the center of the level
         let screen = vec2(SCREEN_WIDTH, SCREEN_HEIGHT);
         let mut camera_zoom: f32 = 1.0;
         let mut camera_pos = level_renderer.size / 2.0 - screen / 2.0;
         let (mouse_x, mouse_y) = (screen.x / 2.0, screen.y / 2.0);
         let old_mouse_world_x = mouse_x + camera_pos.x - SCREEN_WIDTH / 2.0;
         let old_mouse_world_y = mouse_y + camera_pos.y - SCREEN_HEIGHT / 2.0;
-        camera_zoom /= 0.75;
+        camera_zoom /= default_zoom_amt;
         camera_zoom = camera_zoom.max(MIN_ZOOM);
         camera_pos.x = old_mouse_world_x + SCREEN_WIDTH / 2.0 - mouse_x / camera_zoom;
         camera_pos.y = old_mouse_world_y + SCREEN_HEIGHT / 2.0 - mouse_y / camera_zoom;

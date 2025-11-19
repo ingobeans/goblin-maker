@@ -104,6 +104,7 @@ impl Spritesheet {
             sprite_size,
         }
     }
+    #[expect(dead_code)]
     /// Same as `draw_tile`, except centered
     pub fn draw_sprite(
         &self,
@@ -149,6 +150,7 @@ pub struct Animation {
     pub total_length: u32,
 }
 impl Animation {
+    #[expect(dead_code)]
     pub fn from_file(bytes: &[u8]) -> Self {
         let ase = AsepriteFile::read(bytes).unwrap();
         let mut frames = Vec::new();

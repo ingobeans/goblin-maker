@@ -30,9 +30,6 @@ impl<'a> GoblinRuntime<'a> {
         let (actual_screen_width, actual_screen_height) = screen_size();
         let scale_factor =
             (actual_screen_width / SCREEN_WIDTH).min(actual_screen_height / SCREEN_HEIGHT);
-        let (mouse_x, mouse_y) = mouse_position();
-        let mouse_x = mouse_x / scale_factor;
-        let mouse_y = mouse_y / scale_factor;
 
         self.player.update(delta_time, &self.level);
         self.pixel_camera.target = self.player.camera_pos.floor();

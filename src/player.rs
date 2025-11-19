@@ -50,7 +50,6 @@ impl Player {
                 || (self.velocity.x > 0.0 && input.x < 0.0))
         {
             self.velocity.x = 0.0;
-        } else {
         }
         forces.x += input.x * ACCELERATION;
         forces.x -= self.velocity.x
