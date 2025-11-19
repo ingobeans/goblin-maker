@@ -1,19 +1,42 @@
+use std::sync::LazyLock;
+
 use macroquad::prelude::*;
 
 pub const SCREEN_WIDTH: f32 = 256.0 * 2.0;
 pub const SCREEN_HEIGHT: f32 = 144.0 * 2.0;
 
 pub const MAX_VELOCITY: f32 = 190.0;
-pub const GROUND_FRICTION: f32 = 0.11 * 60.0;
+pub const GROUND_FRICTION: f32 = 0.17 * 60.0;
 pub const AIR_DRAG: f32 = 0.07 * 60.0;
 pub const GRAVITY: f32 = 0.35 * 3600.0;
-pub const ACCELERATION: f32 = 3600.0;
+pub const ACCELERATION: f32 = 3600.0 / 2.0;
 
 pub const SCROLL_AMT: f32 = 1.1;
 pub const MIN_ZOOM: f32 = 0.001;
 
 pub const SKY_COLOR: Color = Color::from_hex(0x29adff);
 pub const MAKER_BG_COLOR: Color = Color::from_hex(0x365987);
+
+#[derive(Default)]
+pub struct DebugArgs {
+    pub speedometer: bool,
+    pub fps: bool,
+}
+
+pub static DEBUG_ARGS: LazyLock<DebugArgs> = LazyLock::new(|| {
+    #[cfg(debug_assertions)]
+    {
+        let args: Vec<String> = std::env::args().collect();
+        DebugArgs {
+            speedometer: args.contains(&"spd".to_string()),
+            fps: args.contains(&"fps".to_string()),
+        }
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        DebugArgs::default()
+    }
+});
 
 pub fn create_camera(w: f32, h: f32) -> Camera2D {
     let rt = render_target(w as u32, h as u32);

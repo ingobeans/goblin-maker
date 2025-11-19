@@ -9,7 +9,6 @@ use macroquad::{miniquad::window::screen_size, prelude::*};
 pub struct GoblinMaker<'a> {
     assets: &'a Assets,
     pub level: Level,
-    pixel_camera: Camera2D,
     level_renderer: LevelRenderer<'a>,
     camera_pos: Vec2,
     camera_zoom: f32,
@@ -43,7 +42,6 @@ impl<'a> GoblinMaker<'a> {
             level_renderer,
             assets,
             level,
-            pixel_camera: create_camera(SCREEN_WIDTH, SCREEN_HEIGHT),
             camera_zoom,
             camera_pos,
         }
@@ -159,7 +157,5 @@ impl<'a> GoblinMaker<'a> {
             WHITE,
             params,
         );
-
-        draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);
     }
 }

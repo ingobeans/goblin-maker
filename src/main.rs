@@ -39,6 +39,9 @@ impl<'a> GameManager<'a> {
         } else if let Some(maker) = &mut self.maker {
             maker.update();
         }
+        if DEBUG_ARGS.fps {
+            draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);
+        }
     }
 }
 

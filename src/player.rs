@@ -49,11 +49,10 @@ impl Player {
             && ((self.velocity.x < 0.0 && input.x > 0.0)
                 || (self.velocity.x > 0.0 && input.x < 0.0))
         {
-            self.velocity.x *= -1.0;
+            self.velocity.x = 0.0;
         } else {
-            forces.x += input.x * ACCELERATION;
         }
-
+        forces.x += input.x * ACCELERATION;
         forces.x -= self.velocity.x
             * if self.grounded {
                 GROUND_FRICTION * friction_mod
@@ -127,6 +126,17 @@ impl Player {
                 ..Default::default()
             },
         );
+
+        // draw speedometer
+        if DEBUG_ARGS.speedometer {
+            let amt = self.velocity.x.abs() / MAX_VELOCITY;
+            let width = 100.0;
+            let height = 16.0;
+            let x = 16.0 + self.camera_pos.x.floor() - SCREEN_WIDTH / 2.0;
+            let y = 16.0 + self.camera_pos.y.floor() - SCREEN_HEIGHT / 2.0;
+            draw_rectangle(x - 1.0, y - 1.0, width + 2.0, height + 2.0, BLACK);
+            draw_rectangle(x, y, width * amt, height, LIME);
+        }
     }
 }
 

@@ -68,7 +68,5 @@ impl<'a> GoblinRuntime<'a> {
                 ..Default::default()
             },
         );
-
-        draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);
     }
 }
