@@ -20,7 +20,8 @@ pub const MAKER_BG_COLOR: Color = Color::from_hex(0x365987);
 #[derive(Default)]
 pub struct DebugArgs {
     pub speedometer: bool,
-    pub fps: bool,
+    pub fps_counter: bool,
+    pub uncapped_fps: bool,
 }
 
 pub static DEBUG_ARGS: LazyLock<DebugArgs> = LazyLock::new(|| {
@@ -29,7 +30,8 @@ pub static DEBUG_ARGS: LazyLock<DebugArgs> = LazyLock::new(|| {
         let args: Vec<String> = std::env::args().collect();
         DebugArgs {
             speedometer: args.contains(&"spd".to_string()),
-            fps: args.contains(&"fps".to_string()),
+            fps_counter: args.contains(&"fps".to_string()),
+            uncapped_fps: args.contains(&"uncap".to_string()),
         }
     }
     #[cfg(not(debug_assertions))]

@@ -67,9 +67,9 @@ impl Player {
             && (self.grounded || (self.jump_frames > 0.0 && self.jump_frames < 0.5))
         {
             if self.jump_frames == 0.0 {
-                self.velocity.y -= 3.5 * 60.0;
+                self.velocity.y -= 3.6 * 60.0;
             } else {
-                self.velocity.y -= 60.0 * 10.0 * delta_time;
+                self.velocity.y -= 65.0 * 10.0 * delta_time;
                 //forces.y -= 60.0 * 10.0;
             }
             self.jump_frames += delta_time;

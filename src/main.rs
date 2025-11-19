@@ -39,7 +39,7 @@ impl<'a> GameManager<'a> {
         } else if let Some(maker) = &mut self.maker {
             maker.update();
         }
-        if DEBUG_ARGS.fps {
+        if DEBUG_ARGS.fps_counter {
             draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);
         }
     }
@@ -51,7 +51,11 @@ fn window_conf() -> Conf {
         window_width: SCREEN_WIDTH as i32 * 2,
         window_height: SCREEN_HEIGHT as i32 * 2,
         platform: miniquad::conf::Platform {
-            //swap_interval: Some(0),
+            swap_interval: if DEBUG_ARGS.uncapped_fps {
+                Some(0)
+            } else {
+                None
+            },
             ..Default::default()
         },
         ..Default::default()
