@@ -70,7 +70,6 @@ impl Player {
                 self.velocity.y -= 3.6 * 60.0;
             } else {
                 self.velocity.y -= 65.0 * 10.0 * delta_time;
-                //forces.y -= 60.0 * 10.0;
             }
             self.jump_frames += delta_time;
         }

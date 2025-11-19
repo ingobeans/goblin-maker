@@ -1,7 +1,6 @@
 use crate::{
     assets::Assets,
     level::{Level, LevelRenderer},
-    player::Player,
     utils::*,
 };
 use macroquad::{miniquad::window::screen_size, prelude::*};
@@ -18,7 +17,7 @@ impl<'a> GoblinMaker<'a> {
     pub fn new(assets: &'a Assets) -> Self {
         let width = 100;
         let height = 50;
-        let player_spawn = vec2((width * 8 - 4) as f32, (height * 8 - 8) as f32);
+        let player_spawn = vec2((width * 8 + 4) as f32, (height * 8 + 8) as f32);
         let level = Level {
             tiles: vec![[0, 0]; width * height],
             width,
@@ -47,7 +46,6 @@ impl<'a> GoblinMaker<'a> {
         }
     }
     pub fn update(&mut self) {
-        let delta_time = get_frame_time();
         let (actual_screen_width, actual_screen_height) = screen_size();
         let scale_factor =
             (actual_screen_width / SCREEN_WIDTH).min(actual_screen_height / SCREEN_HEIGHT);
