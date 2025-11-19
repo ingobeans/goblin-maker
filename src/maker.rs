@@ -1,5 +1,5 @@
 use crate::{
-    assets::Assets,
+    assets::{Assets, Spritesheet},
     level::{Level, LevelRenderer},
     ui::*,
     utils::*,
@@ -20,6 +20,54 @@ pub struct GoblinMaker<'a> {
     camera_zoom: f32,
     sidebar: (f32, u8, f32),
     dragging: Dragging,
+    selected_tile: Option<(usize, u8)>,
+    tab_tiles: [(&'a Spritesheet, Vec<Vec2>); 3],
+}
+
+fn get_tab_tiles(assets: &Assets) -> [(&Spritesheet, Vec<Vec2>); 3] {
+    fn get_tiles(tab: usize, assets: &Assets) -> (&Spritesheet, Vec<Vec2>) {
+        match tab {
+            0 => (&assets.terrain_tileset, vec![Vec2::ZERO]),
+            1 | 2 => {
+                let texture = if tab == 1 {
+                    &assets.decoration_tileset
+                } else {
+                    &assets.character_tileset
+                };
+
+                let image = texture.texture.get_texture_data();
+                let mut tiles = Vec::new();
+                'outer: for y in 0..texture.texture.height() as u32 / 16 {
+                    let y = y as f32 * 16.0;
+                    for x in 0..texture.texture.width() as u32 / 16 {
+                        let x = x as f32 * 16.0;
+                        let area = image.sub_image(Rect {
+                            x,
+                            y,
+                            w: 16.0,
+                            h: 16.0,
+                        });
+                        let mut empty = true;
+                        for pixel in area.get_image_data().iter() {
+                            if pixel[3] != 0 {
+                                empty = false;
+                                break;
+                            }
+                        }
+                        if empty {
+                            break 'outer;
+                        }
+                        tiles.push(vec2(x / 16.0, y / 16.0));
+                    }
+                }
+                (texture, tiles)
+            }
+            _ => {
+                panic!()
+            }
+        }
+    }
+    std::array::from_fn(|f| get_tiles(f as usize, assets))
 }
 
 impl<'a> GoblinMaker<'a> {
@@ -31,6 +79,7 @@ impl<'a> GoblinMaker<'a> {
             tiles: vec![[0, 0]; width * height],
             width,
             player_spawn,
+            characters: Vec::new(),
         };
         let level_renderer = LevelRenderer::new(&level, assets, SKY_COLOR);
 
@@ -49,6 +98,7 @@ impl<'a> GoblinMaker<'a> {
         camera_pos.y = old_mouse_world_y + SCREEN_HEIGHT / 2.0 - mouse_y / camera_zoom;
 
         Self {
+            tab_tiles: get_tab_tiles(assets),
             level_renderer,
             assets,
             level,
@@ -56,6 +106,7 @@ impl<'a> GoblinMaker<'a> {
             camera_pos,
             sidebar: (0.0, 0, -1.0),
             dragging: Dragging::No,
+            selected_tile: None,
         }
     }
     pub fn update(&mut self) -> bool {
@@ -129,6 +180,35 @@ impl<'a> GoblinMaker<'a> {
             )
         };
 
+        let tab = &self.tab_tiles[self.sidebar.1 as usize];
+        let mut tile_btns = Vec::new();
+        for (index, tile) in tab.1.iter().enumerate() {
+            let selected = if let Some(selected) = &self.selected_tile
+                && selected.0 == index
+                && selected.1 == self.sidebar.1
+            {
+                WHITE
+            } else {
+                BLACK
+            };
+
+            let button = UITileButton::new(
+                (vec2((index % 3) as f32 * 19.0, (index / 3) as f32 * 19.0)
+                    + sidebar_pos
+                    + vec2(3.0, 25.0))
+                    * scale_factor,
+                tab.0,
+                *tile,
+                scale_factor,
+                SKY_COLOR,
+                selected,
+            );
+            if button.is_hovered() && clicking {
+                self.selected_tile = Some((index, self.sidebar.1));
+            }
+            tile_btns.push(button);
+        }
+
         let start_play = (clicking && play_btn.is_hovered()) || is_key_pressed(KeyCode::R);
         let handle_btn = UIImageButton::new(
             (sidebar_pos + vec2(sidebar_size.x + 2.0, (sidebar_size.y - 9.0) / 2.0)) * scale_factor,
@@ -169,7 +249,8 @@ impl<'a> GoblinMaker<'a> {
             || sidebar_rect.is_hovered()
             || handle_btn.is_hovered()
             || play_btn.is_hovered()
-            || tab_btns.iter().any(|f| f.is_hovered());
+            || tab_btns.iter().any(|f| f.is_hovered())
+            || tile_btns.iter().any(|f| f.is_hovered());
         if ui_hovered && clicking {
             self.dragging = Dragging::UiOwned;
         } else if clicking {
@@ -231,9 +312,15 @@ impl<'a> GoblinMaker<'a> {
         if !clicking_ui
             && is_mouse_button_down(MouseButton::Left)
             && let Some((tx, ty)) = cursor_tile
+            && let Some((tile_index, tab_index)) = self.selected_tile
         {
-            self.level_renderer
-                .set_tile(&mut self.level, tx, ty, [1, 0]);
+            if tab_index == 2 {
+                // todo: place character tile
+            } else {
+                let mut tile = self.level.get_tile(tx, ty);
+                tile[tab_index as usize] = tile_index as u8 + 1;
+                self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
+            }
         }
 
         set_default_camera();
@@ -297,6 +384,9 @@ impl<'a> GoblinMaker<'a> {
         sidebar_rect.draw();
         handle_btn.draw();
         for btn in tab_btns {
+            btn.draw();
+        }
+        for btn in tile_btns {
             btn.draw();
         }
         play_btn.draw();

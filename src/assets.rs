@@ -5,9 +5,12 @@ use image::EncodableLayout;
 use macroquad::prelude::*;
 
 pub struct Assets {
-    pub tileset: Spritesheet,
     pub player_torso: AnimationsGroup,
     pub player_legs: AnimationsGroup,
+
+    pub terrain_tileset: Spritesheet,
+    pub decoration_tileset: Spritesheet,
+    pub character_tileset: Spritesheet,
 
     // ui
     pub tile_btn: Animation,
@@ -19,12 +22,21 @@ pub struct Assets {
 impl Default for Assets {
     fn default() -> Self {
         Self {
-            tileset: Spritesheet::new(
-                load_ase_texture(include_bytes!("../assets/tileset.ase"), None),
-                16.0,
-            ),
             player_torso: AnimationsGroup::from_file(include_bytes!("../assets/player_torso.ase")),
             player_legs: AnimationsGroup::from_file(include_bytes!("../assets/player_legs.ase")),
+
+            terrain_tileset: Spritesheet::new(
+                load_ase_texture(include_bytes!("../assets/terrain_tileset.ase"), None),
+                16.0,
+            ),
+            decoration_tileset: Spritesheet::new(
+                load_ase_texture(include_bytes!("../assets/decoration_tileset.ase"), Some(1)),
+                16.0,
+            ),
+            character_tileset: Spritesheet::new(
+                load_ase_texture(include_bytes!("../assets/character_tileset.ase"), Some(1)),
+                16.0,
+            ),
 
             tile_btn: Animation::from_file(include_bytes!("../assets/ui/tile_btn.ase")),
             decoration_btn: Animation::from_file(include_bytes!("../assets/ui/decoration_btn.ase")),

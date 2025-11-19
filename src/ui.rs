@@ -1,6 +1,8 @@
 use impl_new_derive::ImplNew;
 use macroquad::prelude::*;
 
+use crate::assets::Spritesheet;
+
 #[derive(ImplNew)]
 pub struct UIImageButton<'a> {
     pub pos: Vec2,
@@ -31,6 +33,50 @@ impl<'a> UIImageButton<'a> {
                 dest_size: Some(self.scale_factor * texture.size()),
                 ..Default::default()
             },
+        );
+    }
+}
+
+#[derive(ImplNew)]
+pub struct UITileButton<'a> {
+    pub pos: Vec2,
+    pub tileset: &'a Spritesheet,
+    pub tile: Vec2,
+    pub scale_factor: f32,
+    pub color: Color,
+    pub border_color: Color,
+}
+impl<'a> UITileButton<'a> {
+    pub fn is_hovered(&self) -> bool {
+        let size = 16.0 * self.scale_factor;
+        let mouse = mouse_position();
+        (self.pos.x..self.pos.x + size).contains(&mouse.0)
+            && (self.pos.y..self.pos.y + size).contains(&mouse.1)
+    }
+    pub fn draw(&self) {
+        draw_rectangle(
+            self.pos.x.floor() - self.scale_factor,
+            self.pos.y.floor() - self.scale_factor,
+            18.0 * self.scale_factor,
+            18.0 * self.scale_factor,
+            self.border_color,
+        );
+        draw_rectangle(
+            self.pos.x.floor(),
+            self.pos.y.floor(),
+            16.0 * self.scale_factor,
+            16.0 * self.scale_factor,
+            self.color,
+        );
+        self.tileset.draw_tile(
+            self.pos.x.floor(),
+            self.pos.y.floor(),
+            self.tile.x,
+            self.tile.y,
+            Some(&DrawTextureParams {
+                dest_size: Some(self.scale_factor * vec2(16.0, 16.0)),
+                ..Default::default()
+            }),
         );
     }
 }

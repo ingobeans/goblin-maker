@@ -3,10 +3,14 @@ use macroquad::prelude::*;
 use crate::{assets::Assets, utils::*};
 
 #[derive(Clone)]
+pub enum Character {}
+
+#[derive(Clone)]
 pub struct Level {
     pub tiles: Vec<[u8; 2]>,
     pub width: usize,
     pub player_spawn: Vec2,
+    pub characters: Vec<(Vec2, Character)>,
 }
 impl Level {
     pub fn height(&self) -> usize {
@@ -38,32 +42,41 @@ impl<'a> LevelRenderer<'a> {
             self.clear_color,
         );
 
-        for tile in tile {
+        for (tile, spritesheet) in tile.into_iter().zip(
+            [
+                &self.assets.terrain_tileset,
+                &self.assets.decoration_tileset,
+            ]
+            .iter(),
+        ) {
             if tile == 0 {
                 continue;
             }
             let tile = tile - 1;
-            self.assets.tileset.draw_tile(
+            spritesheet.draw_tile(
                 (x * 16) as f32,
                 (y * 16) as f32,
-                (tile % 32) as f32,
-                (tile / 32) as f32,
+                (tile % 3) as f32,
+                (tile / 3) as f32,
                 None,
             );
         }
     }
     pub fn draw_level(level: &Level, assets: &Assets) {
         for (index, tile_bundle) in level.tiles.iter().enumerate() {
-            for tile in tile_bundle {
+            for (tile, tileset) in tile_bundle
+                .into_iter()
+                .zip([&assets.terrain_tileset, &assets.decoration_tileset].iter())
+            {
                 if *tile == 0 {
                     continue;
                 }
                 let tile = tile - 1;
-                assets.tileset.draw_tile(
+                tileset.draw_tile(
                     ((index % level.width) * 16) as f32,
                     ((index / level.width) * 16) as f32,
-                    (tile % 32) as f32,
-                    (tile / 32) as f32,
+                    (tile % 3) as f32,
+                    (tile / 3) as f32,
                     None,
                 );
             }
