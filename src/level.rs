@@ -6,6 +6,7 @@ use crate::{assets::Assets, utils::*};
 pub struct Level {
     pub tiles: Vec<[u8; 2]>,
     pub width: usize,
+    pub player_spawn: Vec2,
 }
 impl Level {
     pub fn height(&self) -> usize {

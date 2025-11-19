@@ -17,9 +17,13 @@ pub struct GoblinMaker<'a> {
 
 impl<'a> GoblinMaker<'a> {
     pub fn new(assets: &'a Assets) -> Self {
+        let width = 100;
+        let height = 50;
+        let player_spawn = vec2((width * 8 - 4) as f32, (height * 8 - 8) as f32);
         let level = Level {
-            tiles: vec![[0, 0]; 100 * 50],
-            width: 100,
+            tiles: vec![[0, 0]; width * height],
+            width,
+            player_spawn,
         };
         let level_renderer = LevelRenderer::new(&level, assets, SKY_COLOR);
 
@@ -129,9 +133,9 @@ impl<'a> GoblinMaker<'a> {
             },
         );
         let player_pos = vec2(
-            (self.level.width * 8 - 4) as f32 * scale_factor * self.camera_zoom
+            (self.level.player_spawn.x - 4.0) * scale_factor * self.camera_zoom
                 - self.camera_pos.x * scale_factor * self.camera_zoom,
-            (self.level.height() * 8 - 8) as f32 * scale_factor * self.camera_zoom
+            (self.level.player_spawn.y - 8.0) * scale_factor * self.camera_zoom
                 - self.camera_pos.y * scale_factor * self.camera_zoom,
         );
         let params = DrawTextureParams {
