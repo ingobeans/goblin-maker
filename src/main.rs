@@ -30,15 +30,12 @@ impl<'a> GameManager<'a> {
         if is_key_pressed(KeyCode::E) && self.runtime.is_some() {
             self.runtime = None;
         }
-        if is_key_pressed(KeyCode::R)
-            && let Some(maker) = &self.maker
-        {
-            self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone()));
-        }
         if let Some(runtime) = &mut self.runtime {
             runtime.update();
         } else if let Some(maker) = &mut self.maker {
-            maker.update();
+            if maker.update() {
+                self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone()));
+            }
         }
         if DEBUG_ARGS.fps_counter {
             draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);

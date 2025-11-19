@@ -58,7 +58,7 @@ impl<'a> GoblinMaker<'a> {
             dragging: Dragging::No,
         }
     }
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> bool {
         let delta_time = get_frame_time();
         let (actual_screen_width, actual_screen_height) = screen_size();
         let scale_factor =
@@ -87,17 +87,35 @@ impl<'a> GoblinMaker<'a> {
         let clicking = is_mouse_button_pressed(MouseButton::Left);
 
         self.sidebar.0 = (self.sidebar.0 + delta_time * self.sidebar.2 * 12.0).clamp(-0.0, 1.0);
-        let sidebar_size = vec2(60.0, 277.0);
+        let sidebar_size = vec2(60.0, 275.0);
+
+        let topbar = UIRect::new(
+            vec2(1.0, 2.0) * scale_factor,
+            vec2(actual_screen_width - 2.0 * scale_factor, 9.0 * scale_factor),
+            MAKER_BG_COLOR,
+            (scale_factor, BLACK),
+        );
 
         let sidebar_pos = vec2(
-            -sidebar_size.x + self.sidebar.0 * (sidebar_size.x + 2.0),
-            10.0,
+            -sidebar_size.x + self.sidebar.0 * (sidebar_size.x + 1.0),
+            12.0,
         );
-        let rect = UIRect::new(
+        let sidebar_rect = UIRect::new(
             sidebar_pos * scale_factor,
             sidebar_size * scale_factor,
             MAKER_BG_COLOR,
             (scale_factor, BLACK),
+        );
+        let play_btn = UIImageButton::new(
+            vec2(
+                (actual_screen_width - self.assets.play_btn.frames[0].0.width() * scale_factor)
+                    / 2.0,
+                1.0 * scale_factor,
+            ),
+            &self.assets.play_btn.frames[0].0,
+            &self.assets.play_btn.frames[1].0,
+            scale_factor,
+            false,
         );
         let handle_texture = if self.sidebar.2 < 0.0 {
             (
@@ -110,6 +128,8 @@ impl<'a> GoblinMaker<'a> {
                 &self.assets.handle_btn.frames[3].0,
             )
         };
+
+        let start_play = (clicking && play_btn.is_hovered()) || is_key_pressed(KeyCode::R);
         let handle_btn = UIImageButton::new(
             (sidebar_pos + vec2(sidebar_size.x + 2.0, (sidebar_size.y - 9.0) / 2.0)) * scale_factor,
             handle_texture.0,
@@ -145,8 +165,11 @@ impl<'a> GoblinMaker<'a> {
             tab_btns.push(btn);
         }
 
-        let ui_hovered =
-            rect.is_hovered() || handle_btn.is_hovered() || tab_btns.iter().any(|f| f.is_hovered());
+        let ui_hovered = topbar.is_hovered()
+            || sidebar_rect.is_hovered()
+            || handle_btn.is_hovered()
+            || play_btn.is_hovered()
+            || tab_btns.iter().any(|f| f.is_hovered());
         if ui_hovered && clicking {
             self.dragging = Dragging::UiOwned;
         } else if clicking {
@@ -270,10 +293,13 @@ impl<'a> GoblinMaker<'a> {
 
         draw_rectangle(0.0, 0.0, actual_screen_width, actual_screen_height, WHITE);
         gl_use_default_material();
-        rect.draw();
+        topbar.draw();
+        sidebar_rect.draw();
         handle_btn.draw();
         for btn in tab_btns {
             btn.draw();
         }
+        play_btn.draw();
+        start_play
     }
 }
