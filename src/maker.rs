@@ -104,7 +104,7 @@ impl<'a> GoblinMaker<'a> {
             level,
             camera_zoom,
             camera_pos,
-            sidebar: (0.0, 0, -1.0),
+            sidebar: (999.0, 0, 1.0),
             dragging: Dragging::No,
             selected_tile: None,
         }
