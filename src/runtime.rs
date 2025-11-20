@@ -1,25 +1,51 @@
 use crate::{
-    assets::Assets,
-    level::{Level, LevelRenderer},
-    player::Player,
+    assets::{Animation, Assets},
+    level::{Character, Level, LevelRenderer},
+    player::{Player, update_physicsbody},
     utils::*,
 };
+use impl_new_derive::ImplNew;
 use macroquad::{miniquad::window::screen_size, prelude::*};
+
+#[derive(ImplNew)]
+struct AliveEnemy<'a> {
+    pub pos: Vec2,
+    pub animation: &'a Animation,
+    pub time: f32,
+    pub moving_left: bool,
+    pub velocity: Vec2,
+}
 
 pub struct GoblinRuntime<'a> {
     assets: &'a Assets,
     player: Player,
-    level: Level,
+    level: Level<'a>,
     level_renderer: LevelRenderer<'a>,
     pixel_camera: Camera2D,
+    enemies: Vec<AliveEnemy<'a>>,
 }
 
 impl<'a> GoblinRuntime<'a> {
-    pub fn new(assets: &'a Assets, level: Level) -> Self {
+    pub fn new(assets: &'a Assets, level: Level<'a>) -> Self {
         Self {
+            enemies: level
+                .characters
+                .iter()
+                .filter_map(|(pos, character, _)| match character {
+                    Character::PlayerSpawn => None,
+                    Character::Checkpoint => None,
+                    Character::WanderEnemy(animation) => Some(AliveEnemy::new(
+                        *pos + vec2(0.0, 8.0),
+                        *animation,
+                        0.0,
+                        true,
+                        Vec2::ZERO,
+                    )),
+                })
+                .collect(),
             level_renderer: LevelRenderer::new(&level, assets, BLACK.with_alpha(0.0)),
             assets,
-            player: Player::new(level.player_spawn),
+            player: Player::new(level.characters[0].0 + vec2(4.0, 8.0)),
             level,
             pixel_camera: create_camera(SCREEN_WIDTH, SCREEN_HEIGHT),
         }
@@ -50,6 +76,34 @@ impl<'a> GoblinRuntime<'a> {
             DrawTextureParams::default(),
         );
         self.player.draw(self.assets);
+        for enemy in self.enemies.iter_mut() {
+            enemy.time += delta_time;
+            enemy.velocity.y += GRAVITY * delta_time;
+            enemy.velocity.x = if enemy.moving_left { -1.0 } else { 1.0 } * 32.0;
+            let old = enemy.velocity;
+            enemy.pos = update_physicsbody(
+                enemy.pos,
+                &mut enemy.velocity,
+                delta_time,
+                &self.level,
+                true,
+            )
+            .0;
+            if old.x.abs() > enemy.velocity.x.abs() {
+                enemy.moving_left = !enemy.moving_left;
+            }
+
+            draw_texture_ex(
+                enemy.animation.get_at_time((enemy.time * 1000.0) as u32),
+                enemy.pos.x - 12.0,
+                enemy.pos.y - 16.0,
+                WHITE,
+                DrawTextureParams {
+                    flip_x: !enemy.moving_left,
+                    ..Default::default()
+                },
+            );
+        }
         set_default_camera();
         clear_background(BLACK);
         draw_texture_ex(

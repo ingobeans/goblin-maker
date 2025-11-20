@@ -12,6 +12,8 @@ pub struct Assets {
     pub decoration_tileset: Spritesheet,
     pub character_tileset: Spritesheet,
 
+    pub enemies: AnimationsGroup,
+
     // ui
     pub tile_btn: Animation,
     pub decoration_btn: Animation,
@@ -22,6 +24,8 @@ pub struct Assets {
 impl Default for Assets {
     fn default() -> Self {
         Self {
+            enemies: AnimationsGroup::from_file(include_bytes!("../assets/enemies.ase")),
+
             player_torso: AnimationsGroup::from_file(include_bytes!("../assets/player_torso.ase")),
             player_legs: AnimationsGroup::from_file(include_bytes!("../assets/player_legs.ase")),
 

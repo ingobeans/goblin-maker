@@ -1,6 +1,6 @@
 use crate::{
     assets::{Assets, Spritesheet},
-    level::{Level, LevelRenderer},
+    level::{Character, Level, LevelRenderer},
     ui::*,
     utils::*,
 };
@@ -14,7 +14,7 @@ enum Dragging {
 
 pub struct GoblinMaker<'a> {
     assets: &'a Assets,
-    pub level: Level,
+    pub level: Level<'a>,
     level_renderer: LevelRenderer<'a>,
     camera_pos: Vec2,
     camera_zoom: f32,
@@ -69,11 +69,12 @@ impl<'a> GoblinMaker<'a> {
         let width = 100;
         let height = 50;
         let player_spawn = vec2((width * 8 + 4) as f32, (height * 8 + 8) as f32);
+
+        let player_pos = vec2(player_spawn.x - 4.0, player_spawn.y - 8.0);
         let level = Level {
             tiles: vec![[0, 0]; width * height],
             width,
-            player_spawn,
-            characters: Vec::new(),
+            characters: vec![(player_pos, Character::PlayerSpawn, 0)],
         };
         let level_renderer = LevelRenderer::new(&level, assets, SKY_COLOR);
 
@@ -309,7 +310,25 @@ impl<'a> GoblinMaker<'a> {
             && let Some((tile_index, tab_index)) = self.selected_tile
         {
             if tab_index == 2 {
-                // todo: place character tile
+                if is_mouse_button_pressed(MouseButton::Left) {
+                    let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
+                    // check no character is already placed there
+                    if !self.level.characters.iter().any(|f| f.0 == pos) {
+                        let character = match tile_index {
+                            0 => Character::PlayerSpawn,
+                            1 => Character::Checkpoint,
+                            _ => Character::WanderEnemy(
+                                &self.assets.enemies.animations[tile_index - 2],
+                            ),
+                        };
+                        let bundle = (pos, character, tile_index);
+                        if tile_index == 0 {
+                            self.level.characters[0] = bundle;
+                        } else {
+                            self.level.characters.push(bundle);
+                        }
+                    }
+                }
             } else {
                 let mut tile = self.level.get_tile(tx, ty);
                 tile[tab_index as usize] = tile_index as u8 + 1;
@@ -339,12 +358,6 @@ impl<'a> GoblinMaker<'a> {
                 ..Default::default()
             },
         );
-        let player_pos = vec2(
-            (self.level.player_spawn.x - 4.0) * scale_factor * self.camera_zoom
-                - self.camera_pos.x * scale_factor * self.camera_zoom,
-            (self.level.player_spawn.y - 8.0) * scale_factor * self.camera_zoom
-                - self.camera_pos.y * scale_factor * self.camera_zoom,
-        );
         let params = DrawTextureParams {
             dest_size: Some(vec2(
                 16.0 * scale_factor * self.camera_zoom,
@@ -352,20 +365,17 @@ impl<'a> GoblinMaker<'a> {
             )),
             ..Default::default()
         };
-        draw_texture_ex(
-            self.assets.player_legs.animations[0].get_at_time(0),
-            player_pos.x,
-            player_pos.y,
-            WHITE,
-            params.clone(),
-        );
-        draw_texture_ex(
-            self.assets.player_torso.animations[0].get_at_time(0),
-            player_pos.x,
-            player_pos.y,
-            WHITE,
-            params,
-        );
+        for (pos, _, index) in self.level.characters.iter() {
+            self.assets.character_tileset.draw_tile(
+                (pos.x) * scale_factor * self.camera_zoom
+                    - self.camera_pos.x * scale_factor * self.camera_zoom,
+                (pos.y) * scale_factor * self.camera_zoom
+                    - self.camera_pos.y * scale_factor * self.camera_zoom,
+                (index % 3) as f32,
+                (index / 3) as f32,
+                Some(&params),
+            );
+        }
         gl_use_material(&GRID_MATERIAL);
         GRID_MATERIAL.set_uniform("zoom", self.camera_zoom);
         GRID_MATERIAL.set_uniform("scale", scale_factor);

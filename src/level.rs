@@ -1,21 +1,24 @@
 use macroquad::prelude::*;
 
 use crate::{
-    assets::{Assets, Spritesheet},
+    assets::{Animation, Assets, Spritesheet},
     utils::*,
 };
 
 #[derive(Clone)]
-pub enum Character {}
+pub enum Character<'a> {
+    PlayerSpawn,
+    Checkpoint,
+    WanderEnemy(&'a Animation),
+}
 
 #[derive(Clone)]
-pub struct Level {
+pub struct Level<'a> {
     pub tiles: Vec<[u8; 2]>,
     pub width: usize,
-    pub player_spawn: Vec2,
-    pub characters: Vec<(Vec2, Character)>,
+    pub characters: Vec<(Vec2, Character<'a>, usize)>,
 }
-impl Level {
+impl<'a> Level<'a> {
     pub fn height(&self) -> usize {
         self.tiles.len() / self.width
     }
