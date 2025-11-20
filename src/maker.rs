@@ -26,46 +26,40 @@ pub struct GoblinMaker<'a> {
 
 fn get_tab_tiles(assets: &Assets) -> [(&Spritesheet, Vec<Vec2>); 3] {
     fn get_tiles(tab: usize, assets: &Assets) -> (&Spritesheet, Vec<Vec2>) {
-        match tab {
-            0 => (&assets.terrain_tileset, vec![Vec2::ZERO]),
-            1 | 2 => {
-                let texture = if tab == 1 {
-                    &assets.decoration_tileset
-                } else {
-                    &assets.character_tileset
-                };
+        let texture = if tab == 0 {
+            &assets.terrain_tileset
+        } else if tab == 1 {
+            &assets.decoration_tileset
+        } else {
+            &assets.character_tileset
+        };
 
-                let image = texture.texture.get_texture_data();
-                let mut tiles = Vec::new();
-                'outer: for y in 0..texture.texture.height() as u32 / 16 {
-                    let y = y as f32 * 16.0;
-                    for x in 0..texture.texture.width() as u32 / 16 {
-                        let x = x as f32 * 16.0;
-                        let area = image.sub_image(Rect {
-                            x,
-                            y,
-                            w: 16.0,
-                            h: 16.0,
-                        });
-                        let mut empty = true;
-                        for pixel in area.get_image_data().iter() {
-                            if pixel[3] != 0 {
-                                empty = false;
-                                break;
-                            }
-                        }
-                        if empty {
-                            break 'outer;
-                        }
-                        tiles.push(vec2(x / 16.0, y / 16.0));
+        let image = texture.texture.get_texture_data();
+        let mut tiles = Vec::new();
+        'outer: for y in 0..texture.texture.height() as u32 / 16 {
+            let y = y as f32 * 16.0;
+            for x in 0..texture.texture.width() as u32 / 16 {
+                let x = x as f32 * 16.0;
+                let area = image.sub_image(Rect {
+                    x,
+                    y,
+                    w: 16.0,
+                    h: 16.0,
+                });
+                let mut empty = true;
+                for pixel in area.get_image_data().iter() {
+                    if pixel[3] != 0 {
+                        empty = false;
+                        break;
                     }
                 }
-                (texture, tiles)
-            }
-            _ => {
-                panic!()
+                if empty {
+                    break 'outer;
+                }
+                tiles.push(vec2(x / 16.0, y / 16.0));
             }
         }
+        (texture, tiles)
     }
     std::array::from_fn(|f| get_tiles(f as usize, assets))
 }

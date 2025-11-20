@@ -80,36 +80,50 @@ impl<'a> LevelRenderer<'a> {
             self.clear_color,
         );
 
-        for (tile, spritesheet) in tile_bundle.into_iter().zip(
-            [
-                &self.assets.terrain_tileset,
-                &self.assets.decoration_tileset,
-            ]
-            .iter(),
-        ) {
+        for (index, (tile, spritesheet)) in tile_bundle
+            .into_iter()
+            .zip(
+                [
+                    &self.assets.terrain_tileset,
+                    &self.assets.decoration_tileset,
+                ]
+                .iter(),
+            )
+            .enumerate()
+        {
             if tile == 0 {
                 continue;
             }
             let tile = tile - 1;
 
-            if tile == 0 {
-                let tile_positions = [
-                    (x, y.saturating_sub(1)),
-                    (x.saturating_sub(1), y),
-                    (x + 1, y),
-                    (x, y + 1),
-                ];
+            let tile_positions = [
+                (x, y.saturating_sub(1)),
+                (x.saturating_sub(1), y),
+                (x + 1, y),
+                (x, y + 1),
+            ];
+            if index == 0 {
                 for (x, y) in tile_positions {
-                    if level.tiles[x + y * level.width][0] != 1 {
+                    let tile = level.tiles[x + y * level.width];
+                    if tile[0] == 0 {
                         continue;
                     }
                     Self::draw_tile(
                         level,
                         (x, y),
                         vec2((x * 16) as f32, (y * 16) as f32),
-                        vec2((tile % 3) as f32, (tile / 3) as f32),
-                        spritesheet,
+                        vec2(((tile[0] - 1) % 3) as f32, ((tile[0] - 1) / 3) as f32),
+                        &self.assets.terrain_tileset,
                     );
+                    if tile[1] != 0 {
+                        Self::draw_tile(
+                            level,
+                            (x, y),
+                            vec2((x * 16) as f32, (y * 16) as f32),
+                            vec2(((tile[1] - 1) % 3) as f32, ((tile[1] - 1) / 3) as f32),
+                            &self.assets.decoration_tileset,
+                        );
+                    }
                 }
             }
 
