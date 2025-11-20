@@ -1,6 +1,9 @@
 use macroquad::prelude::*;
 
-use crate::{assets::Assets, utils::*};
+use crate::{
+    assets::{Assets, Spritesheet},
+    utils::*,
+};
 
 #[derive(Clone)]
 pub enum Character {}
@@ -31,8 +34,43 @@ pub struct LevelRenderer<'a> {
     pub clear_color: Color,
 }
 impl<'a> LevelRenderer<'a> {
-    pub fn set_tile(&mut self, level: &mut Level, x: usize, y: usize, tile: [u8; 2]) {
-        level.tiles[x + y * level.width] = tile;
+    fn draw_tile(
+        level: &Level,
+        level_pos: (usize, usize),
+        screen: Vec2,
+        tile: Vec2,
+        spritesheet: &Spritesheet,
+    ) {
+        if tile == Vec2::ZERO
+            && let Some((autotile_hashmap, autotile_tileset)) = &spritesheet.autotile_first
+        {
+            let sides = [
+                level.get_tile(level_pos.0, level_pos.1.saturating_sub(1))[0] == 1,
+                level.get_tile(level_pos.0.saturating_sub(1), level_pos.1)[0] == 1,
+                level.get_tile(level_pos.0 + 1, level_pos.1)[0] == 1,
+                level.get_tile(level_pos.0, level_pos.1 + 1)[0] == 1,
+            ];
+            let pos = autotile_hashmap.get(&sides).unwrap();
+            autotile_tileset.draw_tile(
+                screen.x as f32,
+                screen.y as f32,
+                pos.x / 16.0,
+                pos.y / 16.0,
+                None,
+            );
+            return;
+        }
+
+        spritesheet.draw_tile(
+            screen.x as f32,
+            screen.y as f32,
+            tile.x as f32,
+            tile.y as f32,
+            None,
+        );
+    }
+    pub fn set_tile(&mut self, level: &mut Level, x: usize, y: usize, tile_bundle: [u8; 2]) {
+        level.tiles[x + y * level.width] = tile_bundle;
         set_camera(&self.camera);
         draw_rectangle(
             (x * 16) as f32,
@@ -42,7 +80,7 @@ impl<'a> LevelRenderer<'a> {
             self.clear_color,
         );
 
-        for (tile, spritesheet) in tile.into_iter().zip(
+        for (tile, spritesheet) in tile_bundle.into_iter().zip(
             [
                 &self.assets.terrain_tileset,
                 &self.assets.decoration_tileset,
@@ -53,12 +91,34 @@ impl<'a> LevelRenderer<'a> {
                 continue;
             }
             let tile = tile - 1;
-            spritesheet.draw_tile(
-                (x * 16) as f32,
-                (y * 16) as f32,
-                (tile % 3) as f32,
-                (tile / 3) as f32,
-                None,
+
+            if tile == 0 {
+                let tile_positions = [
+                    (x, y.saturating_sub(1)),
+                    (x.saturating_sub(1), y),
+                    (x + 1, y),
+                    (x, y + 1),
+                ];
+                for (x, y) in tile_positions {
+                    if level.tiles[x + y * level.width][0] != 1 {
+                        continue;
+                    }
+                    Self::draw_tile(
+                        level,
+                        (x, y),
+                        vec2((x * 16) as f32, (y * 16) as f32),
+                        vec2((tile % 3) as f32, (tile / 3) as f32),
+                        spritesheet,
+                    );
+                }
+            }
+
+            Self::draw_tile(
+                level,
+                (x, y),
+                vec2((x * 16) as f32, (y * 16) as f32),
+                vec2((tile % 3) as f32, (tile / 3) as f32),
+                spritesheet,
             );
         }
     }
@@ -72,12 +132,15 @@ impl<'a> LevelRenderer<'a> {
                     continue;
                 }
                 let tile = tile - 1;
-                tileset.draw_tile(
-                    ((index % level.width) * 16) as f32,
-                    ((index / level.width) * 16) as f32,
-                    (tile % 3) as f32,
-                    (tile / 3) as f32,
-                    None,
+                Self::draw_tile(
+                    level,
+                    ((index % level.width), (index / level.width)),
+                    vec2(
+                        ((index % level.width) * 16) as f32,
+                        ((index / level.width) * 16) as f32,
+                    ),
+                    vec2((tile % 3) as f32, (tile / 3) as f32),
+                    &tileset,
                 );
             }
         }

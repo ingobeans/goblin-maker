@@ -28,6 +28,10 @@ impl Default for Assets {
             terrain_tileset: Spritesheet::new(
                 load_ase_texture(include_bytes!("../assets/terrain_tileset.ase"), None),
                 16.0,
+            )
+            .autotile(
+                load_ase_texture(include_bytes!("../assets/terrain.ase"), Some(0)),
+                load_ase_texture(include_bytes!("../assets/terrain.ase"), Some(1)),
             ),
             decoration_tileset: Spritesheet::new(
                 load_ase_texture(include_bytes!("../assets/decoration_tileset.ase"), Some(1)),
@@ -121,13 +125,48 @@ impl AnimationsGroup {
 pub struct Spritesheet {
     pub texture: Texture2D,
     pub sprite_size: f32,
+    /// Special case, if true, first tile of the spritesheet is autotiled.
+    pub autotile_first: Option<(HashMap<[bool; 4], Vec2>, Box<Spritesheet>)>,
 }
 impl Spritesheet {
     pub fn new(texture: Texture2D, sprite_size: f32) -> Self {
         Self {
             texture,
             sprite_size,
+            autotile_first: None,
         }
+    }
+    pub fn autotile(
+        mut self,
+        autotiling_tileset: Texture2D,
+        autotiling_ruleset: Texture2D,
+    ) -> Self {
+        let mut hashmap = HashMap::new();
+        let image = autotiling_ruleset.get_texture_data();
+        for x in 0..(autotiling_tileset.width() as u32) / 16 {
+            let x = x * 16;
+            for y in 0..(autotiling_tileset.height() as u32) / 16 {
+                let y = y * 16;
+                let [r, g, b, a] = image.bytes[x as usize * 4
+                    + y as usize * 4 * image.width as usize
+                    ..x as usize * 4 + y as usize * 4 * image.width as usize + 4]
+                else {
+                    panic!("._.")
+                };
+                if a == 0 {
+                    continue;
+                }
+                hashmap.insert(
+                    [r == 255, g == 255, b == 255, a == 255],
+                    vec2(x as f32, y as f32),
+                );
+            }
+        }
+        self.autotile_first = Some((
+            hashmap,
+            Box::new(Spritesheet::new(autotiling_tileset, 16.0)),
+        ));
+        self
     }
     #[expect(dead_code)]
     /// Same as `draw_tile`, except centered
