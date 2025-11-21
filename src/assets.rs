@@ -15,6 +15,10 @@ pub struct Assets {
     pub enemies: AnimationsGroup,
 
     // ui
+    pub logo: Texture2D,
+    pub menu_play_btn: Animation,
+    pub menu_create_btn: Animation,
+
     pub tile_btn: Animation,
     pub decoration_btn: Animation,
     pub character_btn: Animation,
@@ -46,6 +50,12 @@ impl Default for Assets {
                 load_ase_texture(include_bytes!("../assets/character_tileset.ase"), Some(1)),
                 16.0,
             ),
+
+            logo: load_ase_texture(include_bytes!("../assets/ui/logo.ase"), None),
+            menu_play_btn: Animation::from_file(include_bytes!("../assets/ui/menu_play_btn.ase")),
+            menu_create_btn: Animation::from_file(include_bytes!(
+                "../assets/ui/menu_create_btn.ase"
+            )),
 
             tile_btn: Animation::from_file(include_bytes!("../assets/ui/tile_btn.ase")),
             decoration_btn: Animation::from_file(include_bytes!("../assets/ui/decoration_btn.ase")),

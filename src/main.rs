@@ -1,10 +1,17 @@
 use macroquad::prelude::*;
 
-use crate::{assets::Assets, maker::*, runtime::*, utils::*};
+use crate::{
+    assets::Assets,
+    maker::*,
+    menu::{MainMenu, MenuUpdateResult},
+    runtime::*,
+    utils::*,
+};
 
 mod assets;
 mod level;
 mod maker;
+mod menu;
 mod player;
 mod runtime;
 mod ui;
@@ -14,6 +21,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 struct GameManager<'a> {
     assets: &'a Assets,
+    menu: MainMenu<'a>,
     runtime: Option<GoblinRuntime<'a>>,
     maker: Option<GoblinMaker<'a>>,
 }
@@ -21,7 +29,8 @@ struct GameManager<'a> {
 impl<'a> GameManager<'a> {
     fn new(assets: &'a Assets) -> Self {
         Self {
-            maker: Some(GoblinMaker::new(assets)),
+            menu: MainMenu::new(assets),
+            maker: None,
             assets,
             runtime: None,
         }
@@ -32,10 +41,18 @@ impl<'a> GameManager<'a> {
         }
         if let Some(runtime) = &mut self.runtime {
             runtime.update();
-        } else if let Some(maker) = &mut self.maker
-            && maker.update() {
+        } else if let Some(maker) = &mut self.maker {
+            let result = maker.update();
+            if result {
                 self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone()));
             }
+        } else {
+            // neither runtime or maker is open, draw main menu
+            let result = self.menu.update();
+            if let MenuUpdateResult::Create = result {
+                self.maker = Some(GoblinMaker::new(self.assets));
+            }
+        }
         if DEBUG_ARGS.fps_counter {
             draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);
         }
