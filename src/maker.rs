@@ -21,8 +21,6 @@ enum Tool {
 }
 
 fn get_connected_tiles(level: &Level, tx: usize, ty: usize, layer: usize) -> Vec<(usize, usize)> {
-    let base = level.tiles[tx + ty * level.width][layer];
-
     let mut active = vec![(tx, ty)];
     let mut tiles = vec![(tx, ty)];
 
@@ -321,6 +319,15 @@ impl<'a> GoblinMaker<'a> {
                 self.tool = tool;
             }
             tool_btns.push(btn);
+        }
+        if is_key_pressed(KeyCode::E) {
+            self.tool = Tool::Eraser;
+        }
+        if is_key_pressed(KeyCode::B) || is_key_pressed(KeyCode::P) {
+            self.tool = Tool::Pencil;
+        }
+        if is_key_pressed(KeyCode::F) || is_key_pressed(KeyCode::G) {
+            self.tool = Tool::Bucket;
         }
 
         let start_play = (clicking && play_btn.is_hovered()) || is_key_pressed(KeyCode::R);
