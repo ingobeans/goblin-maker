@@ -20,7 +20,7 @@ enum Tool {
     Bucket,
 }
 
-fn get_connected_tiles(level: &Level, tx: usize, ty: usize, layer: usize) -> Vec<(usize, usize)> {
+fn get_connected_tiles(level: &Level, tx: usize, ty: usize) -> Vec<(usize, usize)> {
     let mut active = vec![(tx, ty)];
     let mut tiles = vec![(tx, ty)];
 
@@ -39,7 +39,7 @@ fn get_connected_tiles(level: &Level, tx: usize, ty: usize, layer: usize) -> Vec
             if tiles.contains(&(tx, ty)) {
                 continue;
             }
-            if level.tiles[tx + ty * level.width][layer] == 0 {
+            if level.tiles[tx + ty * level.width] == [0, 0] {
                 tiles.push((tx, ty));
                 active.push((tx, ty));
             }
@@ -187,7 +187,7 @@ impl<'a> GoblinMaker<'a> {
             }
             Tool::Bucket => {
                 if is_mouse_button_pressed(MouseButton::Left) {
-                    let tiles = get_connected_tiles(&self.level, tx, ty, tab_index as usize);
+                    let tiles = get_connected_tiles(&self.level, tx, ty);
                     for (tx, ty) in tiles.into_iter() {
                         let mut tile = self.level.get_tile(tx, ty);
                         tile[tab_index as usize] = tile_index as u8 + 1;
