@@ -4,12 +4,50 @@ use crate::{
     ui::*,
     utils::*,
 };
+use enum_iterator::{Sequence, all};
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 enum Dragging {
     No,
     UiOwned,
     WorldOwned,
+}
+
+#[derive(Sequence, PartialEq, Eq)]
+enum Tool {
+    Pencil,
+    Eraser,
+    Bucket,
+}
+
+fn get_connected_tiles(level: &Level, tx: usize, ty: usize, layer: usize) -> Vec<(usize, usize)> {
+    let base = level.tiles[tx + ty * level.width][layer];
+
+    let mut active = vec![(tx, ty)];
+    let mut tiles = vec![(tx, ty)];
+
+    while let Some((tx, ty)) = active.pop() {
+        let mut tile_positions = vec![(tx + 1, ty), (tx, ty + 1)];
+        if ty > 0 {
+            tile_positions.push((tx, ty.saturating_sub(1)));
+        }
+        if tx > 0 {
+            tile_positions.push((tx.saturating_sub(1), ty));
+        }
+        for (tx, ty) in tile_positions {
+            if tx >= level.width || ty >= level.height() {
+                continue;
+            }
+            if tiles.contains(&(tx, ty)) {
+                continue;
+            }
+            if level.tiles[tx + ty * level.width][layer] == 0 {
+                tiles.push((tx, ty));
+                active.push((tx, ty));
+            }
+        }
+    }
+    tiles
 }
 
 pub struct GoblinMaker<'a> {
@@ -22,6 +60,7 @@ pub struct GoblinMaker<'a> {
     dragging: Dragging,
     selected_tile: Option<(usize, u8)>,
     tab_tiles: [(&'a Spritesheet, Vec<Vec2>); 3],
+    tool: Tool,
 }
 
 fn get_tab_tiles(assets: &Assets) -> [(&Spritesheet, Vec<Vec2>); 3] {
@@ -102,6 +141,62 @@ impl<'a> GoblinMaker<'a> {
             sidebar: (999.0, 0, 1.0),
             dragging: Dragging::No,
             selected_tile: None,
+            tool: Tool::Pencil,
+        }
+    }
+    fn use_tool(&mut self, tx: usize, ty: usize, tile_index: usize, tab_index: u8) {
+        match self.tool {
+            Tool::Pencil => {
+                if tab_index == 2 {
+                    // tab index 2 is character tab. place character
+                    if is_mouse_button_pressed(MouseButton::Left) {
+                        let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
+                        // check no character is already placed there
+                        if !self.level.characters.iter().any(|f| f.0 == pos) {
+                            let character = match tile_index {
+                                0 => Character::PlayerSpawn,
+                                1 => Character::Checkpoint,
+                                _ => Character::WanderEnemy(
+                                    &self.assets.enemies.animations[tile_index - 2],
+                                ),
+                            };
+                            let bundle = (pos, character, tile_index);
+                            if tile_index == 0 {
+                                self.level.characters[0] = bundle;
+                            } else {
+                                self.level.characters.push(bundle);
+                            }
+                        }
+                    }
+                } else {
+                    // general tile placing code
+                    let mut tile = self.level.get_tile(tx, ty);
+                    tile[tab_index as usize] = tile_index as u8 + 1;
+                    self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
+                }
+            }
+            Tool::Eraser => {
+                if tab_index == 2 {
+                    let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
+
+                    self.level.characters.retain(|f| f.0 != pos);
+                } else {
+                    // general tile placing code
+                    let mut tile = self.level.get_tile(tx, ty);
+                    tile[tab_index as usize] = 0;
+                    self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
+                }
+            }
+            Tool::Bucket => {
+                if is_mouse_button_pressed(MouseButton::Left) {
+                    let tiles = get_connected_tiles(&self.level, tx, ty, tab_index as usize);
+                    for (tx, ty) in tiles.into_iter() {
+                        let mut tile = self.level.get_tile(tx, ty);
+                        tile[tab_index as usize] = tile_index as u8 + 1;
+                        self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
+                    }
+                }
+            }
         }
     }
     pub fn update(&mut self) -> bool {
@@ -203,6 +298,30 @@ impl<'a> GoblinMaker<'a> {
             }
             tile_btns.push(button);
         }
+        let mut tool_btns = Vec::new();
+        let button_offset = vec2(11.0, 0.0);
+
+        for (index, (tool, animation)) in
+            all::<Tool>().zip(self.assets.tool_btns.iter()).enumerate()
+        {
+            let active = self.tool == tool;
+            let t = if active {
+                &animation.frames[0].0
+            } else {
+                &animation.frames[1].0
+            };
+            let btn = UIImageButton::new(
+                (vec2(5.0, 2.0) + button_offset * index as f32) * scale_factor,
+                t,
+                t,
+                scale_factor,
+                active,
+            );
+            if btn.is_hovered() && clicking {
+                self.tool = tool;
+            }
+            tool_btns.push(btn);
+        }
 
         let start_play = (clicking && play_btn.is_hovered()) || is_key_pressed(KeyCode::R);
         let handle_btn = UIImageButton::new(
@@ -245,6 +364,7 @@ impl<'a> GoblinMaker<'a> {
             || handle_btn.is_hovered()
             || play_btn.is_hovered()
             || tab_btns.iter().any(|f| f.is_hovered())
+            || tool_btns.iter().any(|f| f.is_hovered())
             || tile_btns.iter().any(|f| f.is_hovered());
         if ui_hovered && clicking {
             self.dragging = Dragging::UiOwned;
@@ -309,31 +429,7 @@ impl<'a> GoblinMaker<'a> {
             && let Some((tx, ty)) = cursor_tile
             && let Some((tile_index, tab_index)) = self.selected_tile
         {
-            if tab_index == 2 {
-                if is_mouse_button_pressed(MouseButton::Left) {
-                    let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
-                    // check no character is already placed there
-                    if !self.level.characters.iter().any(|f| f.0 == pos) {
-                        let character = match tile_index {
-                            0 => Character::PlayerSpawn,
-                            1 => Character::Checkpoint,
-                            _ => Character::WanderEnemy(
-                                &self.assets.enemies.animations[tile_index - 2],
-                            ),
-                        };
-                        let bundle = (pos, character, tile_index);
-                        if tile_index == 0 {
-                            self.level.characters[0] = bundle;
-                        } else {
-                            self.level.characters.push(bundle);
-                        }
-                    }
-                }
-            } else {
-                let mut tile = self.level.get_tile(tx, ty);
-                tile[tab_index as usize] = tile_index as u8 + 1;
-                self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
-            }
+            self.use_tool(tx, ty, tile_index, tab_index);
         }
 
         set_default_camera();
@@ -391,6 +487,9 @@ impl<'a> GoblinMaker<'a> {
             btn.draw();
         }
         for btn in tile_btns {
+            btn.draw();
+        }
+        for btn in tool_btns {
             btn.draw();
         }
         play_btn.draw();

@@ -94,11 +94,6 @@ impl<'a> LevelRenderer<'a> {
             )
             .enumerate()
         {
-            if tile == 0 {
-                continue;
-            }
-            let tile = tile - 1;
-
             let tile_positions = [
                 (x, y.saturating_sub(1)),
                 (x.saturating_sub(1), y),
@@ -107,6 +102,12 @@ impl<'a> LevelRenderer<'a> {
             ];
             if index == 0 {
                 for (x, y) in tile_positions {
+                    if y >= level.height() {
+                        continue;
+                    }
+                    if x >= level.width {
+                        continue;
+                    }
                     let tile = level.tiles[x + y * level.width];
                     if tile[0] == 0 {
                         continue;
@@ -129,6 +130,10 @@ impl<'a> LevelRenderer<'a> {
                     }
                 }
             }
+            if tile == 0 {
+                continue;
+            }
+            let tile = tile - 1;
 
             Self::draw_tile(
                 level,

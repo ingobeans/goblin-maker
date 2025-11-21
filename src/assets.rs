@@ -20,6 +20,7 @@ pub struct Assets {
     pub character_btn: Animation,
     pub handle_btn: Animation,
     pub play_btn: Animation,
+    pub tool_btns: [Animation; 3],
 }
 impl Default for Assets {
     fn default() -> Self {
@@ -51,6 +52,12 @@ impl Default for Assets {
             character_btn: Animation::from_file(include_bytes!("../assets/ui/character_btn.ase")),
             handle_btn: Animation::from_file(include_bytes!("../assets/ui/handle_btn.ase")),
             play_btn: Animation::from_file(include_bytes!("../assets/ui/play_btn.ase")),
+
+            tool_btns: [
+                Animation::from_file(include_bytes!("../assets/ui/pencil_btn.ase")),
+                Animation::from_file(include_bytes!("../assets/ui/eraser_btn.ase")),
+                Animation::from_file(include_bytes!("../assets/ui/bucket_btn.ase")),
+            ],
         }
     }
 }
