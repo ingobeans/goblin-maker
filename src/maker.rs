@@ -138,7 +138,7 @@ impl<'a> GoblinMaker<'a> {
             camera_pos,
             sidebar: (999.0, 0, 1.0),
             dragging: Dragging::No,
-            selected_tile: None,
+            selected_tile: Some((0, 0)),
             tool: Tool::Pencil,
         }
     }
@@ -495,6 +495,64 @@ impl<'a> GoblinMaker<'a> {
                 (index / 3) as f32,
                 Some(&params),
             );
+        }
+
+        match &self.tool {
+            Tool::Pencil => {
+                if let Some((index, tab)) = self.selected_tile
+                    && let Some((tx, ty)) = cursor_tile
+                    && self.level.get_tile(tx, ty)[self.sidebar.1 as usize] != (index + 1) as u8
+                {
+                    let tileset = [
+                        &self.assets.terrain_tileset,
+                        &self.assets.decoration_tileset,
+                        &self.assets.character_tileset,
+                    ][tab as usize];
+                    let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
+                    let mut params = params.clone();
+                    params.source = Some(Rect {
+                        x: (index % 3) as f32 * 16.0,
+                        y: (index / 3) as f32 * 16.0,
+                        w: 16.0,
+                        h: 16.0,
+                    });
+                    draw_texture_ex(
+                        &tileset.texture,
+                        (pos.x) * scale_factor * self.camera_zoom
+                            - self.camera_pos.x * scale_factor * self.camera_zoom,
+                        (pos.y) * scale_factor * self.camera_zoom
+                            - self.camera_pos.y * scale_factor * self.camera_zoom,
+                        WHITE.with_alpha(0.75),
+                        params,
+                    );
+                }
+            }
+            Tool::Eraser => {
+                if let Some((tx, ty)) = cursor_tile {
+                    let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
+                    draw_rectangle_lines(
+                        (pos.x) * scale_factor * self.camera_zoom
+                            - self.camera_pos.x * scale_factor * self.camera_zoom,
+                        (pos.y) * scale_factor * self.camera_zoom
+                            - self.camera_pos.y * scale_factor * self.camera_zoom,
+                        16.0 * scale_factor * self.camera_zoom,
+                        16.0 * scale_factor * self.camera_zoom,
+                        1.0 * scale_factor * self.camera_zoom,
+                        BLACK,
+                    );
+                    draw_rectangle_lines(
+                        (pos.x + 0.5) * scale_factor * self.camera_zoom
+                            - self.camera_pos.x * scale_factor * self.camera_zoom,
+                        (pos.y + 0.5) * scale_factor * self.camera_zoom
+                            - self.camera_pos.y * scale_factor * self.camera_zoom,
+                        15.0 * scale_factor * self.camera_zoom,
+                        15.0 * scale_factor * self.camera_zoom,
+                        1.0 * scale_factor * self.camera_zoom,
+                        WHITE,
+                    );
+                }
+            }
+            _ => {}
         }
         gl_use_material(&GRID_MATERIAL);
         GRID_MATERIAL.set_uniform("zoom", self.camera_zoom);
