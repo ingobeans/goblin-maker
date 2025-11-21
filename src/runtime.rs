@@ -19,14 +19,14 @@ struct AliveEnemy<'a> {
 pub struct GoblinRuntime<'a> {
     assets: &'a Assets,
     player: Player,
-    level: Level<'a>,
+    level: Level,
     level_renderer: LevelRenderer<'a>,
     pixel_camera: Camera2D,
     enemies: Vec<AliveEnemy<'a>>,
 }
 
 impl<'a> GoblinRuntime<'a> {
-    pub fn new(assets: &'a Assets, level: Level<'a>) -> Self {
+    pub fn new(assets: &'a Assets, level: Level) -> Self {
         Self {
             enemies: level
                 .characters
@@ -35,8 +35,8 @@ impl<'a> GoblinRuntime<'a> {
                     Character::PlayerSpawn => None,
                     Character::Checkpoint => None,
                     Character::WanderEnemy(animation) => Some(AliveEnemy::new(
-                        *pos + vec2(0.0, 8.0),
-                        animation,
+                        vec2(pos.0, pos.1) + vec2(0.0, 8.0),
+                        &assets.enemies.animations[*animation],
                         0.0,
                         true,
                         Vec2::ZERO,
@@ -45,7 +45,9 @@ impl<'a> GoblinRuntime<'a> {
                 .collect(),
             level_renderer: LevelRenderer::new(&level, assets, BLACK.with_alpha(0.0)),
             assets,
-            player: Player::new(level.characters[0].0 + vec2(4.0, 8.0)),
+            player: Player::new(
+                vec2(level.characters[0].0.0, level.characters[0].0.1) + vec2(4.0, 8.0),
+            ),
             level,
             pixel_camera: create_camera(SCREEN_WIDTH, SCREEN_HEIGHT),
         }

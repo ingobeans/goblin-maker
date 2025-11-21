@@ -14,6 +14,8 @@ pub struct Assets {
 
     pub enemies: AnimationsGroup,
 
+    pub font: Font,
+
     // ui
     pub logo: Texture2D,
     pub menu_play_btn: Animation,
@@ -28,7 +30,11 @@ pub struct Assets {
 }
 impl Default for Assets {
     fn default() -> Self {
+        let mut font = load_ttf_font_from_bytes(include_bytes!("../assets/pix32.ttf")).unwrap();
+        font.set_filter(FilterMode::Nearest);
         Self {
+            font,
+
             enemies: AnimationsGroup::from_file(include_bytes!("../assets/enemies.ase")),
 
             player_torso: AnimationsGroup::from_file(include_bytes!("../assets/player_torso.ase")),

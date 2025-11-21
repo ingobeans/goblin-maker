@@ -4,21 +4,22 @@ use crate::{
     assets::{Animation, Assets, Spritesheet},
     utils::*,
 };
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
-pub enum Character<'a> {
+#[derive(Clone, Deserialize, Serialize)]
+pub enum Character {
     PlayerSpawn,
     Checkpoint,
-    WanderEnemy(&'a Animation),
+    WanderEnemy(usize),
 }
 
-#[derive(Clone)]
-pub struct Level<'a> {
+#[derive(Clone, Deserialize, Serialize)]
+pub struct Level {
     pub tiles: Vec<[u8; 2]>,
     pub width: usize,
-    pub characters: Vec<(Vec2, Character<'a>, usize)>,
+    pub characters: Vec<((f32, f32), Character, usize)>,
 }
-impl<'a> Level<'a> {
+impl Level {
     pub fn height(&self) -> usize {
         self.tiles.len() / self.width
     }
@@ -54,23 +55,11 @@ impl<'a> LevelRenderer<'a> {
                 level.get_tile(level_pos.0, level_pos.1 + 1)[0] == 1,
             ];
             let pos = autotile_hashmap.get(&sides).unwrap();
-            autotile_tileset.draw_tile(
-                screen.x,
-                screen.y,
-                pos.x / 16.0,
-                pos.y / 16.0,
-                None,
-            );
+            autotile_tileset.draw_tile(screen.x, screen.y, pos.x / 16.0, pos.y / 16.0, None);
             return;
         }
 
-        spritesheet.draw_tile(
-            screen.x,
-            screen.y,
-            tile.x,
-            tile.y,
-            None,
-        );
+        spritesheet.draw_tile(screen.x, screen.y, tile.x, tile.y, None);
     }
     pub fn set_tile(&mut self, level: &mut Level, x: usize, y: usize, tile_bundle: [u8; 2]) {
         level.tiles[x + y * level.width] = tile_bundle;

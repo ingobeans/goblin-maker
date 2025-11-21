@@ -50,7 +50,8 @@ fn get_connected_tiles(level: &Level, tx: usize, ty: usize) -> Vec<(usize, usize
 
 pub struct GoblinMaker<'a> {
     assets: &'a Assets,
-    pub level: Level<'a>,
+    pub name: Option<String>,
+    pub level: Level,
     level_renderer: LevelRenderer<'a>,
     camera_pos: Vec2,
     camera_zoom: f32,
@@ -102,21 +103,9 @@ fn get_tab_tiles(assets: &Assets) -> [(&Spritesheet, Vec<Vec2>); 3] {
 }
 
 impl<'a> GoblinMaker<'a> {
-    pub fn new(assets: &'a Assets) -> Self {
-        let width = 100;
-        let height = 50;
-        let player_spawn = vec2((width * 8 + 4) as f32, (height * 8 + 8) as f32);
-
-        let player_pos = vec2(player_spawn.x - 4.0, player_spawn.y - 8.0);
-        let level = Level {
-            tiles: vec![[0, 0]; width * height],
-            width,
-            characters: vec![(player_pos, Character::PlayerSpawn, 0)],
-        };
-        let level_renderer = LevelRenderer::new(&level, assets, SKY_COLOR);
-
+    pub fn from(assets: &'a Assets, level: Level, name: Option<String>) -> Self {
         let default_zoom_amt = 0.8;
-
+        let level_renderer = LevelRenderer::new(&level, assets, SKY_COLOR);
         // all these calculations are literally just to zoom the viewport around the center of the level
         let screen = vec2(SCREEN_WIDTH, SCREEN_HEIGHT);
         let mut camera_zoom: f32 = 1.0;
@@ -130,6 +119,7 @@ impl<'a> GoblinMaker<'a> {
         camera_pos.y = old_mouse_world_y + SCREEN_HEIGHT / 2.0 - mouse_y / camera_zoom;
 
         Self {
+            name,
             tab_tiles: get_tab_tiles(assets),
             level_renderer,
             assets,
@@ -142,21 +132,33 @@ impl<'a> GoblinMaker<'a> {
             tool: Tool::Pencil,
         }
     }
+    pub fn new(assets: &'a Assets) -> Self {
+        let width = 100;
+        let height = 50;
+        let player_spawn = vec2((width * 8 + 4) as f32, (height * 8 + 8) as f32);
+
+        let player_pos = vec2(player_spawn.x - 4.0, player_spawn.y - 8.0);
+        let level = Level {
+            tiles: vec![[0, 0]; width * height],
+            width,
+            characters: vec![((player_pos.x, player_pos.y), Character::PlayerSpawn, 0)],
+        };
+
+        Self::from(assets, level, None)
+    }
     fn use_tool(&mut self, tx: usize, ty: usize, tile_index: usize, tab_index: u8) {
         match self.tool {
             Tool::Pencil => {
                 if tab_index == 2 {
                     // tab index 2 is character tab. place character
                     if is_mouse_button_pressed(MouseButton::Left) {
-                        let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
+                        let pos = ((tx * 16) as f32, (ty * 16) as f32);
                         // check no character is already placed there
                         if !self.level.characters.iter().any(|f| f.0 == pos) {
                             let character = match tile_index {
                                 0 => Character::PlayerSpawn,
                                 1 => Character::Checkpoint,
-                                _ => Character::WanderEnemy(
-                                    &self.assets.enemies.animations[tile_index - 2],
-                                ),
+                                _ => Character::WanderEnemy(tile_index - 2),
                             };
                             let bundle = (pos, character, tile_index);
                             if tile_index == 0 {
@@ -175,7 +177,7 @@ impl<'a> GoblinMaker<'a> {
             }
             Tool::Eraser => {
                 if tab_index == 2 {
-                    let pos = vec2((tx * 16) as f32, (ty * 16) as f32);
+                    let pos = ((tx * 16) as f32, (ty * 16) as f32);
 
                     self.level.characters.retain(|f| f.0 != pos);
                 } else {
@@ -487,9 +489,9 @@ impl<'a> GoblinMaker<'a> {
         };
         for (pos, _, index) in self.level.characters.iter() {
             self.assets.character_tileset.draw_tile(
-                (pos.x) * scale_factor * self.camera_zoom
+                (pos.0) * scale_factor * self.camera_zoom
                     - self.camera_pos.x * scale_factor * self.camera_zoom,
-                (pos.y) * scale_factor * self.camera_zoom
+                (pos.1) * scale_factor * self.camera_zoom
                     - self.camera_pos.y * scale_factor * self.camera_zoom,
                 (index % 3) as f32,
                 (index / 3) as f32,

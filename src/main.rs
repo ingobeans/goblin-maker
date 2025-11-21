@@ -2,6 +2,8 @@ use macroquad::prelude::*;
 
 use crate::{
     assets::Assets,
+    data::Data,
+    level::Level,
     maker::*,
     menu::{MainMenu, MenuUpdateResult},
     runtime::*,
@@ -9,6 +11,7 @@ use crate::{
 };
 
 mod assets;
+mod data;
 mod level;
 mod maker;
 mod menu;
@@ -21,6 +24,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 struct GameManager<'a> {
     assets: &'a Assets,
+    data: Data,
     menu: MainMenu<'a>,
     runtime: Option<GoblinRuntime<'a>>,
     maker: Option<GoblinMaker<'a>>,
@@ -29,6 +33,7 @@ struct GameManager<'a> {
 impl<'a> GameManager<'a> {
     fn new(assets: &'a Assets) -> Self {
         Self {
+            data: Data::load(),
             menu: MainMenu::new(assets),
             maker: None,
             assets,
@@ -36,8 +41,34 @@ impl<'a> GameManager<'a> {
         }
     }
     fn update(&mut self) {
+        self.data.update();
         if is_key_pressed(KeyCode::E) && self.runtime.is_some() {
             self.runtime = None;
+        }
+        if is_key_pressed(KeyCode::Escape)
+            && let Some(maker) = self.maker.take()
+        {
+            let level = maker.level;
+            let name = if let Some(name) = maker.name {
+                name
+            } else {
+                let mut i = 0;
+                let mut name = String::new();
+                loop {
+                    i += 1;
+                    name = format!("Unnamed {i}");
+                    if !self.data.local.user_levels.iter().any(|f| f.0 == name) {
+                        break;
+                    }
+                }
+                name
+            };
+            if let Some(old) = self.data.local.user_levels.iter_mut().find(|f| f.0 == name) {
+                old.1 = level;
+            } else {
+                self.data.local.user_levels.push((name, level));
+            }
+            self.data.local.store();
         }
         if let Some(runtime) = &mut self.runtime {
             runtime.update();
@@ -48,9 +79,14 @@ impl<'a> GameManager<'a> {
             }
         } else {
             // neither runtime or maker is open, draw main menu
-            let result = self.menu.update();
-            if let MenuUpdateResult::Create = result {
-                self.maker = Some(GoblinMaker::new(self.assets));
+            let result = self.menu.update(&self.data);
+            if let MenuUpdateResult::Create(value) = result {
+                if let Some(index) = value {
+                    let data = self.data.local.user_levels[index].clone();
+                    self.maker = Some(GoblinMaker::from(self.assets, data.1, Some(data.0)));
+                } else {
+                    self.maker = Some(GoblinMaker::new(self.assets));
+                }
             }
         }
         if DEBUG_ARGS.fps_counter {
