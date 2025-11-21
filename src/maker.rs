@@ -501,7 +501,14 @@ impl<'a> GoblinMaker<'a> {
             Tool::Pencil => {
                 if let Some((index, tab)) = self.selected_tile
                     && let Some((tx, ty)) = cursor_tile
-                    && self.level.get_tile(tx, ty)[self.sidebar.1 as usize] != (index + 1) as u8
+                    && {
+                        if self.sidebar.1 == 2 {
+                            true
+                        } else {
+                            self.level.get_tile(tx, ty)[self.sidebar.1 as usize]
+                                != (index + 1) as u8
+                        }
+                    }
                 {
                     let tileset = [
                         &self.assets.terrain_tileset,
