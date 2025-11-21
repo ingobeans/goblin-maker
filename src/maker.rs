@@ -1,6 +1,6 @@
 use crate::{
     assets::{Assets, Spritesheet},
-    level::{Character, Level, LevelRenderer},
+    level::{self, Character, Level, LevelRenderer},
     ui::*,
     utils::*,
 };
@@ -10,7 +10,7 @@ use macroquad::{miniquad::window::screen_size, prelude::*};
 enum Dragging {
     No,
     UiOwned,
-    WorldOwned,
+    WorldOwned(u8),
 }
 
 #[derive(Sequence, PartialEq, Eq)]
@@ -181,7 +181,10 @@ impl<'a> GoblinMaker<'a> {
                 } else {
                     // general tile placing code
                     let mut tile = self.level.get_tile(tx, ty);
-                    tile[tab_index as usize] = 0;
+                    let Dragging::WorldOwned(layer) = self.dragging else {
+                        panic!()
+                    };
+                    tile[layer as usize] = 0;
                     self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
                 }
             }
@@ -376,7 +379,23 @@ impl<'a> GoblinMaker<'a> {
         if ui_hovered && clicking {
             self.dragging = Dragging::UiOwned;
         } else if clicking {
-            self.dragging = Dragging::WorldOwned;
+            // find what layer it is we are clicking.
+
+            let tile = cursor_tile.map(|(tx, ty)| self.level.get_tile(tx, ty));
+            let layer = if let Some(tile) = tile {
+                if tile[0] == 0 && tile[1] == 0 {
+                    self.sidebar.1
+                } else if tile[1] != 0 && tile[0] != 0 {
+                    self.sidebar.1
+                } else if tile[0] == 0 {
+                    1
+                } else {
+                    0
+                }
+            } else {
+                self.sidebar.1
+            };
+            self.dragging = Dragging::WorldOwned(layer);
         }
 
         let clicking_ui = matches!(self.dragging, Dragging::UiOwned);
