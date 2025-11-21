@@ -114,7 +114,6 @@ impl LocalData {
             let Ok(buffer) = read(path) else {
                 return Self::default();
             };
-            dbg!(deserialize(&buffer).unwrap().user_levels.len());
             deserialize(&buffer).unwrap_or_default()
         }
 
