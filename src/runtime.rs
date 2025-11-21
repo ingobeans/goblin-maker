@@ -36,7 +36,7 @@ impl<'a> GoblinRuntime<'a> {
                     Character::Checkpoint => None,
                     Character::WanderEnemy(animation) => Some(AliveEnemy::new(
                         *pos + vec2(0.0, 8.0),
-                        *animation,
+                        animation,
                         0.0,
                         true,
                         Vec2::ZERO,

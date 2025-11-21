@@ -55,8 +55,8 @@ impl<'a> LevelRenderer<'a> {
             ];
             let pos = autotile_hashmap.get(&sides).unwrap();
             autotile_tileset.draw_tile(
-                screen.x as f32,
-                screen.y as f32,
+                screen.x,
+                screen.y,
                 pos.x / 16.0,
                 pos.y / 16.0,
                 None,
@@ -65,10 +65,10 @@ impl<'a> LevelRenderer<'a> {
         }
 
         spritesheet.draw_tile(
-            screen.x as f32,
-            screen.y as f32,
-            tile.x as f32,
-            tile.y as f32,
+            screen.x,
+            screen.y,
+            tile.x,
+            tile.y,
             None,
         );
     }
@@ -147,7 +147,7 @@ impl<'a> LevelRenderer<'a> {
     pub fn draw_level(level: &Level, assets: &Assets) {
         for (index, tile_bundle) in level.tiles.iter().enumerate() {
             for (tile, tileset) in tile_bundle
-                .into_iter()
+                .iter()
                 .zip([&assets.terrain_tileset, &assets.decoration_tileset].iter())
             {
                 if *tile == 0 {
@@ -162,7 +162,7 @@ impl<'a> LevelRenderer<'a> {
                         ((index / level.width) * 16) as f32,
                     ),
                     vec2((tile % 3) as f32, (tile / 3) as f32),
-                    &tileset,
+                    tileset,
                 );
             }
         }

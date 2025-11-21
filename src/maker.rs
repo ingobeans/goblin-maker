@@ -1,6 +1,6 @@
 use crate::{
     assets::{Assets, Spritesheet},
-    level::{self, Character, Level, LevelRenderer},
+    level::{Character, Level, LevelRenderer},
     ui::*,
     utils::*,
 };
@@ -98,7 +98,7 @@ fn get_tab_tiles(assets: &Assets) -> [(&Spritesheet, Vec<Vec2>); 3] {
         }
         (texture, tiles)
     }
-    std::array::from_fn(|f| get_tiles(f as usize, assets))
+    std::array::from_fn(|f| get_tiles(f, assets))
 }
 
 impl<'a> GoblinMaker<'a> {
@@ -383,9 +383,7 @@ impl<'a> GoblinMaker<'a> {
 
             let tile = cursor_tile.map(|(tx, ty)| self.level.get_tile(tx, ty));
             let layer = if let Some(tile) = tile {
-                if tile[0] == 0 && tile[1] == 0 {
-                    self.sidebar.1
-                } else if tile[1] != 0 && tile[0] != 0 {
+                if (tile[0] == 0 && tile[1] == 0) || (tile[1] != 0 && tile[0] != 0) {
                     self.sidebar.1
                 } else if tile[0] == 0 {
                     1

@@ -132,12 +132,12 @@ impl AnimationsGroup {
         }
     }
 }
-
+type AutotileData = (HashMap<[bool; 4], Vec2>, Box<Spritesheet>);
 pub struct Spritesheet {
     pub texture: Texture2D,
     pub sprite_size: f32,
     /// Special case, if true, first tile of the spritesheet is autotiled.
-    pub autotile_first: Option<(HashMap<[bool; 4], Vec2>, Box<Spritesheet>)>,
+    pub autotile_first: Option<AutotileData>,
 }
 impl Spritesheet {
     pub fn new(texture: Texture2D, sprite_size: f32) -> Self {

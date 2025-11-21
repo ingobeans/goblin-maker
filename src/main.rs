@@ -32,11 +32,10 @@ impl<'a> GameManager<'a> {
         }
         if let Some(runtime) = &mut self.runtime {
             runtime.update();
-        } else if let Some(maker) = &mut self.maker {
-            if maker.update() {
+        } else if let Some(maker) = &mut self.maker
+            && maker.update() {
                 self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone()));
             }
-        }
         if DEBUG_ARGS.fps_counter {
             draw_text(&get_fps().to_string(), 64.0, 64.0, 32.0, WHITE);
         }
