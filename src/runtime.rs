@@ -36,7 +36,7 @@ impl<'a> GoblinRuntime<'a> {
                 .iter()
                 .filter_map(|(pos, character, _)| match character {
                     Character::PlayerSpawn => None,
-                    Character::Checkpoint => None,
+                    Character::Flag => None,
                     Character::WanderEnemy(animation) => Some(AliveEnemy::new(
                         vec2(pos.0, pos.1) + vec2(0.0, 8.0),
                         &assets.enemies.animations[*animation],
@@ -136,6 +136,14 @@ impl<'a> GoblinRuntime<'a> {
             enemy.death_frames < 0.5
         });
         self.player.draw(self.assets);
+
+        self.assets.character_tileset.draw_tile(
+            self.level.characters[1].0.0,
+            self.level.characters[1].0.1,
+            1.0,
+            0.0,
+            None,
+        );
         set_default_camera();
         clear_background(BLACK);
         draw_texture_ex(

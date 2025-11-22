@@ -9,7 +9,7 @@ use crate::{
 #[derive(Clone, DeBin, SerBin)]
 pub enum Character {
     PlayerSpawn,
-    Checkpoint,
+    Flag,
     WanderEnemy(usize),
 }
 

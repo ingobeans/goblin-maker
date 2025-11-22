@@ -152,7 +152,18 @@ impl<'a> GoblinMaker<'a> {
         let level = Level {
             tiles: vec![[0, 0]; width * height],
             width,
-            characters: vec![((player_pos.x, player_pos.y), Character::PlayerSpawn, 0)],
+            characters: vec![
+                (
+                    (player_pos.x - 2.0 * 16.0, player_pos.y),
+                    Character::PlayerSpawn,
+                    0,
+                ),
+                (
+                    (player_pos.x + 4.0 * 16.0, player_pos.y),
+                    Character::Flag,
+                    1,
+                ),
+            ],
         };
 
         Self::from(assets, level, None)
@@ -168,12 +179,14 @@ impl<'a> GoblinMaker<'a> {
                         if !self.level.characters.iter().any(|f| f.0 == pos) {
                             let character = match tile_index {
                                 0 => Character::PlayerSpawn,
-                                1 => Character::Checkpoint,
+                                1 => Character::Flag,
                                 _ => Character::WanderEnemy(tile_index - 2),
                             };
                             let bundle = (pos, character, tile_index);
                             if tile_index == 0 {
                                 self.level.characters[0] = bundle;
+                            } else if tile_index == 1 {
+                                self.level.characters[1] = bundle;
                             } else {
                                 self.level.characters.push(bundle);
                             }
@@ -190,9 +203,11 @@ impl<'a> GoblinMaker<'a> {
                 if self.sidebar.1 == 2 {
                     let pos = ((tx * 16) as f32, (ty * 16) as f32);
 
-                    self.level
-                        .characters
-                        .retain(|f| matches!(f.1, Character::PlayerSpawn) || f.0 != pos);
+                    self.level.characters.retain(|f| {
+                        matches!(f.1, Character::PlayerSpawn)
+                            || matches!(f.1, Character::Flag)
+                            || f.0 != pos
+                    });
                 } else {
                     // general tile placing code
                     let mut tile = self.level.get_tile(tx, ty);
