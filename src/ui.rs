@@ -35,6 +35,132 @@ impl<'a> UIImageButton<'a> {
         );
     }
 }
+
+#[derive(Default)]
+pub struct TextInputData {
+    pub selected: bool,
+    pub cursor_pos: usize,
+    pub text: String,
+}
+
+#[derive(ImplNew)]
+pub struct UITextInput<'a> {
+    pub pos: Vec2,
+    pub size: Vec2,
+    pub color: Color,
+    pub hover_color: Color,
+    pub border: (f32, Color),
+    pub font: (u16, &'a Font, f32),
+    pub data: &'a mut TextInputData,
+}
+impl<'a> UITextInput<'a> {
+    pub fn is_hovered(&self) -> bool {
+        let mouse = mouse_position();
+        (self.pos.x..self.pos.x + self.size.x).contains(&mouse.0)
+            && (self.pos.y..self.pos.y + self.size.y).contains(&mouse.1)
+    }
+    pub fn draw(&mut self) {
+        let hovered = self.is_hovered();
+        let color = if self.data.selected || hovered {
+            self.hover_color
+        } else {
+            self.color
+        };
+        if is_mouse_button_pressed(MouseButton::Left) {
+            self.data.selected = hovered;
+        }
+
+        // handle key events
+        let mut backspace_pressed = false;
+        if let Some(key) = get_char_pressed() {
+            if key.is_alphanumeric() && key.is_ascii() || key == ' ' {
+                self.data.text.insert(self.data.cursor_pos, key);
+                self.data.cursor_pos += 1;
+            } else if key == '\u{8}' {
+                backspace_pressed = true
+            }
+        } else if is_key_pressed(KeyCode::Left) {
+            self.data.cursor_pos = self.data.cursor_pos.saturating_sub(1);
+        } else if is_key_pressed(KeyCode::Right) {
+            self.data.cursor_pos = (self.data.cursor_pos + 1).min(self.data.text.len());
+        } else if is_key_pressed(KeyCode::Delete) {
+            if self.data.cursor_pos < self.data.text.len() {
+                self.data.text.remove(self.data.cursor_pos);
+            }
+        } else if is_key_pressed(KeyCode::Home) {
+            self.data.cursor_pos = 0;
+        } else if is_key_pressed(KeyCode::End) {
+            self.data.cursor_pos = self.data.text.len();
+        } else if is_key_pressed(KeyCode::Backspace) {
+            backspace_pressed = true;
+        }
+
+        if backspace_pressed && self.data.cursor_pos > 0 {
+            self.data.cursor_pos = self.data.cursor_pos.saturating_sub(1);
+            self.data.text.remove(self.data.cursor_pos);
+        }
+
+        draw_rectangle(
+            self.pos.x.floor(),
+            self.pos.y.floor(),
+            self.size.x.floor(),
+            self.size.y.floor(),
+            color,
+        );
+        draw_rectangle_lines(
+            self.pos.x.floor(),
+            self.pos.y.floor(),
+            self.size.x.floor(),
+            self.size.y.floor(),
+            self.border.0.floor() * 2.0,
+            self.border.1,
+        );
+        if self.data.selected {
+            let (before, after) = self.data.text.split_at(self.data.cursor_pos);
+            let pos = draw_text_ex(
+                before,
+                self.pos.x + self.font.2,
+                self.pos.y + self.font.0 as f32,
+                TextParams {
+                    font_size: self.font.0,
+                    font: Some(self.font.1),
+                    ..Default::default()
+                },
+            );
+            let pos2 = draw_text_ex(
+                "|",
+                self.pos.x + self.font.2 + pos.width,
+                self.pos.y + self.font.0 as f32,
+                TextParams {
+                    font_size: self.font.0,
+                    font: Some(self.font.1),
+                    ..Default::default()
+                },
+            );
+            draw_text_ex(
+                after,
+                self.pos.x + self.font.2 + pos.width + pos2.width,
+                self.pos.y + self.font.0 as f32,
+                TextParams {
+                    font_size: self.font.0,
+                    font: Some(self.font.1),
+                    ..Default::default()
+                },
+            );
+        } else {
+            draw_text_ex(
+                &self.data.text,
+                self.pos.x + self.font.2,
+                self.pos.y + self.font.0 as f32,
+                TextParams {
+                    font_size: self.font.0,
+                    font: Some(self.font.1),
+                    ..Default::default()
+                },
+            );
+        }
+    }
+}
 #[derive(ImplNew)]
 pub struct UITextButton<'a> {
     pub pos: Vec2,

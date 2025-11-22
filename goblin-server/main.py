@@ -23,7 +23,7 @@ def list():
 @app.route("/get/<id>")
 @cross_origin()
 def get(id: str):
-    if not all([c.isalnum() or c == ' ' for c in id]):
+    if not all([c.isalnum() and c.isascii() or c == ' ' for c in id]):
         return "invalid :("
     path = os.path.join(levels_path,id)
     if not os.path.isfile(path):
@@ -33,7 +33,7 @@ def get(id: str):
 @app.route("/upload/<id>")
 @cross_origin()
 def upload(id: str):
-    if not all([c.isalnum() or c == ' ' for c in id]):
+    if not all([c.isalnum() and c.isascii() or c == ' ' for c in id]):
         return "invalid :("
     data = request.headers.get("data")
     if data is None:

@@ -14,8 +14,8 @@ enum LevelMenuType {
 enum PopupMenu {
     None,
     Delete(usize),
-    Rename(usize, String),
-    Upload(usize, String, String),
+    Rename(usize, TextInputData),
+    Upload(usize, TextInputData, TextInputData),
 }
 pub struct MainMenu<'a> {
     assets: &'a Assets,
@@ -200,10 +200,23 @@ impl<'a> MainMenu<'a> {
                                         PopupMenu::Delete(data.local.user_levels.len() - i - 1);
                                 }
                                 1 => {
-                                    todo!()
+                                    let mut text_data = TextInputData::default();
+                                    text_data.text = data.local.user_levels
+                                        [data.local.user_levels.len() - i - 1]
+                                        .0
+                                        .clone();
+                                    text_data.cursor_pos = text_data.text.len();
+                                    self.popup = PopupMenu::Rename(
+                                        data.local.user_levels.len() - i - 1,
+                                        text_data,
+                                    );
                                 }
                                 2 => {
-                                    todo!()
+                                    self.popup = PopupMenu::Upload(
+                                        data.local.user_levels.len() - i - 1,
+                                        TextInputData::default(),
+                                        TextInputData::default(),
+                                    );
                                 }
                                 _ => {
                                     panic!()
@@ -263,86 +276,124 @@ impl<'a> MainMenu<'a> {
         create_btn.draw();
 
         let popup_size = vec2(250.0, 105.0);
-        match &self.popup {
-            PopupMenu::Delete(index) => {
-                let pos = (vec2(actual_screen_width, actual_screen_height)
-                    - popup_size * scale_factor)
-                    / 2.0;
-                draw_rectangle(
-                    pos.x,
-                    pos.y,
-                    popup_size.x * scale_factor,
-                    popup_size.y * scale_factor,
-                    SKY_COLOR,
-                );
-                draw_rectangle_lines(
-                    pos.x,
-                    pos.y,
-                    popup_size.x * scale_factor,
-                    popup_size.y * scale_factor,
-                    2.0 * scale_factor,
-                    BLACK,
-                );
-                let font_size = (24.0 * scale_factor) as u16;
-                draw_text_ex(
-                    "Are you sure?",
-                    pos.x + 35.0 * scale_factor,
-                    pos.y + font_size as f32,
-                    TextParams {
-                        font_size,
-                        font: Some(&self.assets.font),
-                        ..Default::default()
-                    },
-                );
-                let button_size = vec2(90.0, 25.0);
-                let button_offset = vec2(button_size.x + 5.0, 0.0);
-                let yes = UITextButton::new(
-                    vec2(
-                        pos.x + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor,
-                        pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
-                    ),
-                    button_size * scale_factor,
-                    "Yes".to_string(),
-                    GREEN_COLOR,
-                    DARK_GREEN_COLOR,
-                    (scale_factor, BLACK),
-                    (
-                        (12.0 * scale_factor) as u16,
-                        &self.assets.font,
-                        3.0 * scale_factor,
-                    ),
-                );
-                yes.draw();
-                if yes.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
-                    data.local.user_levels.remove(*index);
-                    data.local.store();
-                    self.popup = PopupMenu::None;
+        if !matches!(self.popup, PopupMenu::None) {
+            let pos =
+                (vec2(actual_screen_width, actual_screen_height) - popup_size * scale_factor) / 2.0;
+            draw_rectangle(
+                pos.x,
+                pos.y,
+                popup_size.x * scale_factor,
+                popup_size.y * scale_factor,
+                SKY_COLOR,
+            );
+            draw_rectangle_lines(
+                pos.x,
+                pos.y,
+                popup_size.x * scale_factor,
+                popup_size.y * scale_factor,
+                2.0 * scale_factor,
+                BLACK,
+            );
+            let font_size = (24.0 * scale_factor) as u16;
+            match &mut self.popup {
+                PopupMenu::Delete(_) => {
+                    draw_text_ex(
+                        "Are you sure?",
+                        pos.x + 35.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
                 }
-                let no = UITextButton::new(
-                    vec2(
-                        pos.x
-                            + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor
-                            + button_offset.x * scale_factor,
-                        pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
-                    ),
-                    button_size * scale_factor,
-                    "No".to_string(),
-                    SKY_COLOR,
-                    MAKER_BG_COLOR,
-                    (scale_factor, BLACK),
-                    (
-                        (12.0 * scale_factor) as u16,
-                        &self.assets.font,
-                        3.0 * scale_factor,
-                    ),
-                );
-                no.draw();
-                if no.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
-                    self.popup = PopupMenu::None;
+                PopupMenu::Rename(_, data) => {
+                    draw_text_ex(
+                        "Rename",
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                    let size = vec2(225.0, 25.0);
+                    let font_size = (12.0 * scale_factor) as u16;
+                    let mut input = UITextInput::new(
+                        pos + vec2((popup_size.x - size.x) / 2.0, 36.0) * scale_factor,
+                        size * scale_factor,
+                        SKY_COLOR,
+                        MAKER_BG_COLOR,
+                        (scale_factor, BLACK),
+                        (font_size, &self.assets.font, 3.0 * scale_factor),
+                        data,
+                    );
+                    input.draw();
+                }
+                _ => {}
+            }
+            let button_size = vec2(90.0, 25.0);
+            let button_offset = vec2(button_size.x + 5.0, 0.0);
+            let yes = UITextButton::new(
+                vec2(
+                    pos.x + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor,
+                    pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
+                ),
+                button_size * scale_factor,
+                "Yes".to_string(),
+                GREEN_COLOR,
+                DARK_GREEN_COLOR,
+                (scale_factor, BLACK),
+                (
+                    (12.0 * scale_factor) as u16,
+                    &self.assets.font,
+                    3.0 * scale_factor,
+                ),
+            );
+            yes.draw();
+            if yes.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                match &self.popup {
+                    PopupMenu::Delete(index) => {
+                        data.local.user_levels.remove(*index);
+                        data.local.store();
+                        self.popup = PopupMenu::None;
+                    }
+                    PopupMenu::Rename(index, text_data) => {
+                        if !data.local.user_levels.iter().any(|f| f.0 == text_data.text) {
+                            data.local.user_levels[*index].0 = text_data.text.clone();
+                            self.popup = PopupMenu::None;
+                            data.local.store();
+                        }
+                    }
+                    _ => {}
                 }
             }
-            _ => {}
+            let no = UITextButton::new(
+                vec2(
+                    pos.x
+                        + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor
+                        + button_offset.x * scale_factor,
+                    pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
+                ),
+                button_size * scale_factor,
+                "No".to_string(),
+                SKY_COLOR,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+                (
+                    (12.0 * scale_factor) as u16,
+                    &self.assets.font,
+                    3.0 * scale_factor,
+                ),
+            );
+            no.draw();
+            if no.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                self.popup = PopupMenu::None;
+            }
         }
+
         if create_btn.is_hovered() && mouse_down {
             self.level_menu = LevelMenuType::LocalLevels;
             if data.local.user_levels.is_empty() {
