@@ -4,7 +4,7 @@ use macroquad::{miniquad::window::screen_size, prelude::*};
 pub enum MenuUpdateResult {
     None,
     Create(Option<usize>),
-    PlayOnline(Level),
+    PlayOnline(Level, String, String),
 }
 enum LevelMenuType {
     Closed,
@@ -492,8 +492,13 @@ impl<'a> MainMenu<'a> {
                         match result {
                             NetworkResult::Success => {
                                 self.popup = PopupMenu::None;
+                                let (name, author) = level.split_once("-").unwrap();
                                 let level = data.cached_online_levels.get(&level).unwrap().clone();
-                                return MenuUpdateResult::PlayOnline(level);
+                                return MenuUpdateResult::PlayOnline(
+                                    level,
+                                    name.to_string(),
+                                    author.to_string(),
+                                );
                             }
                             NetworkResult::Fail(e) => self.popup = PopupMenu::Error(e),
                         }

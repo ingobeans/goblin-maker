@@ -41,9 +41,6 @@ impl<'a> GameManager<'a> {
     }
     fn update(&mut self) {
         self.data.update();
-        if is_key_pressed(KeyCode::E) && self.runtime.is_some() {
-            self.runtime = None;
-        }
         if is_key_pressed(KeyCode::Escape)
             && let Some(maker) = self.maker.take()
         {
@@ -70,11 +67,14 @@ impl<'a> GameManager<'a> {
             self.data.local.store();
         }
         if let Some(runtime) = &mut self.runtime {
-            runtime.update();
+            let result = runtime.update();
+            if result {
+                self.runtime = None;
+            }
         } else if let Some(maker) = &mut self.maker {
             let result = maker.update();
             if result {
-                self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone()));
+                self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone(), None));
             }
         } else {
             // neither runtime or maker is open, draw main menu
@@ -88,8 +88,9 @@ impl<'a> GameManager<'a> {
                         self.maker = Some(GoblinMaker::new(self.assets));
                     }
                 }
-                MenuUpdateResult::PlayOnline(level) => {
-                    self.runtime = Some(GoblinRuntime::new(self.assets, level))
+                MenuUpdateResult::PlayOnline(level, name, author) => {
+                    self.runtime =
+                        Some(GoblinRuntime::new(self.assets, level, Some((name, author))))
                 }
                 _ => {}
             }

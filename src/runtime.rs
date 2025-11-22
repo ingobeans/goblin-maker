@@ -2,6 +2,7 @@ use crate::{
     assets::{Animation, Assets},
     level::{Character, Level, LevelRenderer},
     player::{Player, PlayerUpdateResult, update_physicsbody},
+    ui::*,
     utils::*,
 };
 use impl_new_derive::ImplNew;
@@ -16,7 +17,6 @@ struct AliveEnemy<'a> {
     pub velocity: Vec2,
     pub death_frames: f32,
 }
-
 pub struct GoblinRuntime<'a> {
     assets: &'a Assets,
     player: Player,
@@ -24,10 +24,12 @@ pub struct GoblinRuntime<'a> {
     level_renderer: LevelRenderer<'a>,
     pixel_camera: Camera2D,
     enemies: Vec<AliveEnemy<'a>>,
+    menu_open: bool,
+    level_details: Option<(String, String)>,
 }
 
 impl<'a> GoblinRuntime<'a> {
-    pub fn new(assets: &'a Assets, level: Level) -> Self {
+    pub fn new(assets: &'a Assets, level: Level, level_name: Option<(String, String)>) -> Self {
         Self {
             enemies: level
                 .characters
@@ -52,9 +54,11 @@ impl<'a> GoblinRuntime<'a> {
             ),
             level,
             pixel_camera: create_camera(SCREEN_WIDTH, SCREEN_HEIGHT),
+            menu_open: false,
+            level_details: level_name,
         }
     }
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> bool {
         // cap delta time to a minimum of 60 fps.
         let delta_time = get_frame_time().min(1.0 / 60.0);
         let (actual_screen_width, actual_screen_height) = screen_size();
@@ -147,6 +151,90 @@ impl<'a> GoblinRuntime<'a> {
                 ..Default::default()
             },
         );
+        if self.menu_open {
+            let size = vec2(150.0, 150.0);
+            let pos = ((vec2(actual_screen_width, actual_screen_height) - size * scale_factor)
+                / 2.0)
+                .floor();
+            let rect = UIRect::new(
+                pos,
+                size * scale_factor,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+            );
+            rect.draw();
+            let font_size = (20.0 * scale_factor) as u16;
+            draw_text_ex(
+                "Paused",
+                pos.x + 5.0 * scale_factor,
+                pos.y + font_size as f32,
+                TextParams {
+                    font_size,
+                    font: Some(&self.assets.font),
+                    ..Default::default()
+                },
+            );
+            let font_size = (12.0 * scale_factor) as u16;
+            if let Some((name, author)) = &self.level_details {
+                let font_size = (8.0 * scale_factor) as u16;
+                draw_multiline_text_ex(
+                    &format!("Level name: {name}\nLevel author: {author}"),
+                    pos.x + 5.0 * scale_factor,
+                    pos.y + font_size as f32 + 30.0 * scale_factor,
+                    None,
+                    TextParams {
+                        color: LIGHTGRAY,
+                        font_size,
+                        font: Some(&self.assets.font),
+                        ..Default::default()
+                    },
+                );
+            }
+
+            let btn_size = vec2(135.0, 20.0);
+            let resume = UITextButton::new(
+                pos + vec2((size.x - btn_size.x) / 2.0, size.y - 2.0 * btn_size.y - 7.0)
+                    * scale_factor,
+                btn_size * scale_factor,
+                "Resume".to_string(),
+                SKY_COLOR,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+                (font_size, &self.assets.font, 5.0 * scale_factor),
+            );
+            if resume.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                self.menu_open = false;
+            }
+            resume.draw();
+            let return_to_menu = UITextButton::new(
+                pos + vec2((size.x - btn_size.x) / 2.0, size.y - btn_size.y - 5.0) * scale_factor,
+                btn_size * scale_factor,
+                "Return to menu".to_string(),
+                SKY_COLOR,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+                (font_size, &self.assets.font, 5.0 * scale_factor),
+            );
+            return_to_menu.draw();
+            if return_to_menu.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                return true;
+            }
+        } else {
+            let pause_btn = UIImageButton::new(
+                vec2(2.0, 2.0) * scale_factor,
+                &self.assets.pause_btn.frames[0].0,
+                &self.assets.pause_btn.frames[1].0,
+                scale_factor,
+                false,
+            );
+            if pause_btn.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                self.menu_open = true;
+            }
+            pause_btn.draw();
+        }
+        if is_key_pressed(KeyCode::E) || is_key_pressed(KeyCode::Escape) {
+            self.menu_open = !self.menu_open;
+        }
         match result {
             PlayerUpdateResult::GameOver => {
                 let mut level = Level {
@@ -155,10 +243,11 @@ impl<'a> GoblinRuntime<'a> {
                     characters: Vec::new(),
                 };
                 std::mem::swap(&mut level, &mut self.level);
-                *self = GoblinRuntime::new(self.assets, level);
-                return;
+                *self = GoblinRuntime::new(self.assets, level, self.level_details.clone());
+                return false;
             }
             _ => {}
         }
+        false
     }
 }
