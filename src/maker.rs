@@ -509,8 +509,7 @@ impl<'a> GoblinMaker<'a> {
                         if self.sidebar.1 == 2 {
                             true
                         } else {
-                            self.level.get_tile(tx, ty)[self.sidebar.1 as usize]
-                                != (index + 1) as u8
+                            self.level.get_tile(tx, ty)[tab as usize] != (index + 1) as u8
                         }
                     }
                 {
