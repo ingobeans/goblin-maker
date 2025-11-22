@@ -28,6 +28,7 @@ pub struct Assets {
     pub play_btn: Animation,
     pub tool_btns: [Animation; 3],
     pub spinner: Animation,
+    pub warning: Texture2D,
 }
 impl Default for Assets {
     fn default() -> Self {
@@ -70,6 +71,7 @@ impl Default for Assets {
             handle_btn: Animation::from_file(include_bytes!("../assets/ui/handle_btn.ase")),
             play_btn: Animation::from_file(include_bytes!("../assets/ui/play_btn.ase")),
             spinner: Animation::from_file(include_bytes!("../assets/ui/spinner.ase")),
+            warning: load_ase_texture(include_bytes!("../assets/ui/warning.ase"), None),
 
             tool_btns: [
                 Animation::from_file(include_bytes!("../assets/ui/pencil_btn.ase")),

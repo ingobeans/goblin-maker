@@ -17,6 +17,7 @@ pub struct Data {
     pub cached_online_levels: HashMap<String, Level>,
     pub list_request: Option<Request>,
     pub fetch_requests: Vec<(Request, String)>,
+    pub failed_list_request: bool,
 }
 impl Data {
     pub fn load() -> Self {
@@ -31,6 +32,7 @@ impl Data {
                 )
                 .send(),
             ),
+            failed_list_request: false,
         }
     }
     pub fn update(&mut self) {
@@ -40,9 +42,11 @@ impl Data {
                 match result {
                     Ok(data) => {
                         self.online_levels = data.split(",").map(|f| f.to_string()).collect();
+                        self.failed_list_request = false;
                         info!("fetched level list: {:?}", self.online_levels);
                     }
                     Err(_) => {
+                        self.failed_list_request = true;
                         warn!("level list couldn't be fetched");
                     }
                 }

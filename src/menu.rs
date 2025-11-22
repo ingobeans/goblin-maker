@@ -69,19 +69,48 @@ impl<'a> MainMenu<'a> {
                 (scale_factor, BLACK),
             );
             rect.draw();
-            if matches!(self.level_menu, LevelMenuType::BrowseOnline) && data.list_request.is_some()
-            {
-                // if fetch request is active, show spinner
-                draw_texture_ex(
-                    self.assets.spinner.get_at_time((self.time * 1000.0) as u32),
-                    menu_pos.x + (size.x / 2.0 - 20.0) * scale_factor,
-                    menu_pos.y + 40.0 * scale_factor,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(vec2(40.0, 40.0) * scale_factor),
-                        ..Default::default()
-                    },
-                );
+            if matches!(self.level_menu, LevelMenuType::BrowseOnline) {
+                if data.list_request.is_some() {
+                    // if fetch request is active, show spinner
+                    draw_texture_ex(
+                        self.assets.spinner.get_at_time((self.time * 1000.0) as u32),
+                        menu_pos.x + (size.x / 2.0 - 20.0) * scale_factor,
+                        menu_pos.y + 40.0 * scale_factor,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(40.0, 40.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
+                }
+                if data.failed_list_request {
+                    // if fetch request failed, show error icon
+                    let pos = vec2(
+                        menu_pos.x + (size.x / 2.0 - 151.0 / 2.0) * scale_factor,
+                        menu_pos.y + 40.0 * scale_factor,
+                    );
+                    draw_texture_ex(
+                        &self.assets.warning,
+                        pos.x,
+                        pos.y,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(40.0, 40.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
+                    let font_size = (12.0 * scale_factor) as u16;
+                    draw_text_ex(
+                        "Server unreachable",
+                        pos.x + 35.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                }
             }
 
             let buttons_pos = menu_pos + vec2(3.0, 3.0) * scale_factor;
