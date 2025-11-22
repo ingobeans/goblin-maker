@@ -3,7 +3,6 @@ use macroquad::prelude::*;
 use crate::{
     assets::Assets,
     data::Data,
-    level::Level,
     maker::*,
     menu::{MainMenu, MenuUpdateResult},
     runtime::*,

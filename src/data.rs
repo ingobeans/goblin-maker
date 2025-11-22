@@ -1,10 +1,6 @@
 //! Mod for handling both local level saving, as well as fetching online levels
 
-use std::{
-    collections::HashMap,
-    fs::{read, read_to_string},
-    path::PathBuf,
-};
+use std::{collections::HashMap, fs::read, path::PathBuf};
 
 use base64::{Engine, prelude::BASE64_STANDARD};
 use macroquad::prelude::{info, warn};
@@ -19,8 +15,8 @@ pub struct Data {
     pub local: LocalData,
     pub online_levels: Vec<String>,
     pub cached_online_levels: HashMap<String, Level>,
-    list_request: Option<Request>,
-    fetch_requests: Vec<(Request, String)>,
+    pub list_request: Option<Request>,
+    pub fetch_requests: Vec<(Request, String)>,
 }
 impl Data {
     pub fn load() -> Self {
@@ -133,7 +129,7 @@ impl LocalData {
             let Some(path) = Self::get_save_path() else {
                 return;
             };
-            let data = serialize(&self);
+            let data = serialize(self);
             write(path, data).unwrap();
         }
 

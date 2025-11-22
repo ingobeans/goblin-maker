@@ -14,15 +14,18 @@ enum LevelMenuType {
 pub struct MainMenu<'a> {
     assets: &'a Assets,
     level_menu: LevelMenuType,
+    time: f32,
 }
 impl<'a> MainMenu<'a> {
     pub fn new(assets: &'a Assets) -> Self {
         Self {
             assets,
             level_menu: LevelMenuType::Closed,
+            time: 0.0,
         }
     }
     pub fn update(&mut self, data: &Data) -> MenuUpdateResult {
+        let delta_time = get_frame_time();
         let (actual_screen_width, actual_screen_height) = screen_size();
         let scale_factor =
             (actual_screen_width / SCREEN_WIDTH).min(actual_screen_height / SCREEN_HEIGHT);
@@ -34,6 +37,8 @@ impl<'a> MainMenu<'a> {
         GRID_MATERIAL.set_uniform("screen", vec2(actual_screen_width, actual_screen_height));
         draw_rectangle(0.0, 0.0, actual_screen_width, actual_screen_height, WHITE);
         gl_use_default_material();
+
+        self.time += delta_time;
 
         let buttons_start = vec2(22.0, 113.0);
         let play_btn = UIImageButton::new(
@@ -64,6 +69,20 @@ impl<'a> MainMenu<'a> {
                 (scale_factor, BLACK),
             );
             rect.draw();
+            if matches!(self.level_menu, LevelMenuType::BrowseOnline) && data.list_request.is_some()
+            {
+                // if fetch request is active, show spinner
+                draw_texture_ex(
+                    self.assets.spinner.get_at_time((self.time * 1000.0) as u32),
+                    menu_pos.x + (size.x / 2.0 - 20.0) * scale_factor,
+                    menu_pos.y + 40.0 * scale_factor,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(vec2(40.0, 40.0) * scale_factor),
+                        ..Default::default()
+                    },
+                );
+            }
 
             let buttons_pos = menu_pos + vec2(3.0, 3.0) * scale_factor;
             let size = vec2(size.x - 6.0, 25.0);
