@@ -8,12 +8,8 @@ use std::{
 
 use base64::{Engine, prelude::BASE64_STANDARD};
 use macroquad::prelude::{info, warn};
+use nanoserde::{DeBin, SerBin};
 use quad_net::http_request::Request;
-use serde::{Deserialize, Serialize};
-use serde_binary::{
-    Deserializer, Serializer,
-    binary_stream::{BinaryReader, BinaryWriter, Endian, MemoryStream, SliceStream},
-};
 
 use crate::level::Level;
 
@@ -61,10 +57,7 @@ impl Data {
                 match result {
                     Ok(data) => {
                         fn deserialize(buffer: &[u8]) -> Option<Level> {
-                            let mut stream = SliceStream::new(buffer);
-                            let reader = BinaryReader::new(&mut stream, Endian::Little);
-                            let mut deserializer = Deserializer { reader };
-                            Level::deserialize(&mut deserializer).ok()
+                            Level::de_bin(&mut 0, buffer).ok()
                         }
                         let Ok(decoded) = BASE64_STANDARD.decode(data) else {
                             warn!("level '{}' couldn't be base64 decoded", *name);
@@ -87,7 +80,7 @@ impl Data {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(DeBin, SerBin, Default)]
 pub struct LocalData {
     pub user_levels: Vec<(String, Level)>,
 }
@@ -100,10 +93,7 @@ impl LocalData {
     }
     pub fn load() -> Self {
         fn deserialize(buffer: &[u8]) -> Option<LocalData> {
-            let mut stream = SliceStream::new(buffer);
-            let reader = BinaryReader::new(&mut stream, Endian::Little);
-            let mut deserializer = Deserializer { reader };
-            LocalData::deserialize(&mut deserializer).ok()
+            LocalData::de_bin(&mut 0, buffer).ok()
         }
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -131,12 +121,10 @@ impl LocalData {
         }
     }
     pub fn store(&self) {
-        fn serialize(data: &LocalData) -> Option<Vec<u8>> {
-            let mut stream = MemoryStream::new();
-            let writer = BinaryWriter::new(&mut stream, Endian::Little);
-            let mut serializer = Serializer { writer };
-            data.serialize(&mut serializer).ok()?;
-            Some(stream.into())
+        fn serialize(data: &LocalData) -> Vec<u8> {
+            let mut buffer = Vec::new();
+            data.ser_bin(&mut buffer);
+            buffer
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -145,18 +133,14 @@ impl LocalData {
             let Some(path) = Self::get_save_path() else {
                 return;
             };
-            let Some(data) = serialize(&self) else {
-                return;
-            };
+            let data = serialize(&self);
             write(path, data).unwrap();
         }
 
         #[cfg(target_arch = "wasm32")]
         {
             let mut storage = quad_storage::LocalStorage::default();
-            let Some(data) = serialize(&self) else {
-                return;
-            };
+            let data = serialize(&self);
             let buffer = BASE64_STANDARD.encode(&data);
             storage.set("save.wa", &buffer);
         }

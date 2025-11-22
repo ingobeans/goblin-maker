@@ -1,19 +1,19 @@
 use macroquad::prelude::*;
+use nanoserde::{DeBin, SerBin};
 
 use crate::{
     assets::{Animation, Assets, Spritesheet},
     utils::*,
 };
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, DeBin, SerBin)]
 pub enum Character {
     PlayerSpawn,
     Checkpoint,
     WanderEnemy(usize),
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, DeBin, SerBin)]
 pub struct Level {
     pub tiles: Vec<[u8; 2]>,
     pub width: usize,
