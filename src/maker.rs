@@ -21,6 +21,12 @@ enum Tool {
     Bucket,
 }
 
+pub enum MakerUpdateResult {
+    None,
+    EnterRuntime,
+    ReturnToMenu,
+}
+
 fn get_connected_tiles(level: &Level, tx: usize, ty: usize) -> Vec<(usize, usize)> {
     let mut active = vec![(tx, ty)];
     let mut tiles = vec![(tx, ty)];
@@ -203,7 +209,7 @@ impl<'a> GoblinMaker<'a> {
             }
         }
     }
-    pub fn update(&mut self) -> bool {
+    pub fn update(&mut self) -> MakerUpdateResult {
         let delta_time = get_frame_time();
         let (actual_screen_width, actual_screen_height) = screen_size();
         let scale_factor =
@@ -305,6 +311,19 @@ impl<'a> GoblinMaker<'a> {
         let mut tool_btns = Vec::new();
         let button_offset = vec2(11.0, 0.0);
 
+        let pause_btn = UIImageButton::new(
+            (vec2(1.0, 2.0)) * scale_factor,
+            &self.assets.pause_btn_topbar.frames[0].0,
+            &self.assets.pause_btn_topbar.frames[1].0,
+            scale_factor,
+            false,
+        );
+        let mut result = MakerUpdateResult::None;
+        if is_key_pressed(KeyCode::Escape) || (pause_btn.is_hovered() && clicking) {
+            result = MakerUpdateResult::ReturnToMenu;
+        }
+        pause_btn.draw();
+
         for (index, (tool, animation)) in
             all::<Tool>().zip(self.assets.tool_btns.iter()).enumerate()
         {
@@ -315,7 +334,7 @@ impl<'a> GoblinMaker<'a> {
                 &animation.frames[1].0
             };
             let btn = UIImageButton::new(
-                (vec2(5.0, 2.0) + button_offset * index as f32) * scale_factor,
+                (vec2(27.0, 2.0) + button_offset * index as f32) * scale_factor,
                 t,
                 t,
                 scale_factor,
@@ -336,7 +355,9 @@ impl<'a> GoblinMaker<'a> {
             self.tool = Tool::Bucket;
         }
 
-        let start_play = (clicking && play_btn.is_hovered()) || is_key_pressed(KeyCode::R);
+        if (clicking && play_btn.is_hovered()) || is_key_pressed(KeyCode::R) {
+            result = MakerUpdateResult::EnterRuntime;
+        }
         let handle_btn = UIImageButton::new(
             (sidebar_pos + vec2(sidebar_size.x + 2.0, (sidebar_size.y - 9.0) / 2.0)) * scale_factor,
             handle_texture.0,
@@ -373,6 +394,7 @@ impl<'a> GoblinMaker<'a> {
         }
 
         let ui_hovered = topbar.is_hovered()
+            || pause_btn.is_hovered()
             || sidebar_rect.is_hovered()
             || handle_btn.is_hovered()
             || play_btn.is_hovered()
@@ -573,6 +595,7 @@ impl<'a> GoblinMaker<'a> {
         draw_rectangle(0.0, 0.0, actual_screen_width, actual_screen_height, WHITE);
         gl_use_default_material();
         topbar.draw();
+        pause_btn.draw();
         sidebar_rect.draw();
         handle_btn.draw();
         for btn in tab_btns {
@@ -585,6 +608,6 @@ impl<'a> GoblinMaker<'a> {
             btn.draw();
         }
         play_btn.draw();
-        start_play
+        result
     }
 }

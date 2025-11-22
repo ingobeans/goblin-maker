@@ -41,31 +41,6 @@ impl<'a> GameManager<'a> {
     }
     fn update(&mut self) {
         self.data.update();
-        if is_key_pressed(KeyCode::Escape)
-            && let Some(maker) = self.maker.take()
-        {
-            let level = maker.level;
-            let name = if let Some(name) = maker.name {
-                name
-            } else {
-                let mut i = 0;
-                let mut name;
-                loop {
-                    i += 1;
-                    name = format!("Unnamed {i}");
-                    if !self.data.local.user_levels.iter().any(|f| f.0 == name) {
-                        break;
-                    }
-                }
-                name
-            };
-            if let Some(old) = self.data.local.user_levels.iter_mut().find(|f| f.0 == name) {
-                old.1 = level;
-            } else {
-                self.data.local.user_levels.push((name, level));
-            }
-            self.data.local.store();
-        }
         if let Some(runtime) = &mut self.runtime {
             let result = runtime.update();
             if result {
@@ -73,8 +48,36 @@ impl<'a> GameManager<'a> {
             }
         } else if let Some(maker) = &mut self.maker {
             let result = maker.update();
-            if result {
-                self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone(), None));
+            match result {
+                MakerUpdateResult::EnterRuntime => {
+                    self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone(), None));
+                }
+                MakerUpdateResult::ReturnToMenu => {
+                    let maker = self.maker.take().unwrap();
+                    let level = maker.level;
+                    let name = if let Some(name) = maker.name {
+                        name
+                    } else {
+                        let mut i = 0;
+                        let mut name;
+                        loop {
+                            i += 1;
+                            name = format!("Unnamed {i}");
+                            if !self.data.local.user_levels.iter().any(|f| f.0 == name) {
+                                break;
+                            }
+                        }
+                        name
+                    };
+                    if let Some(old) = self.data.local.user_levels.iter_mut().find(|f| f.0 == name)
+                    {
+                        old.1 = level;
+                    } else {
+                        self.data.local.user_levels.push((name, level));
+                    }
+                    self.data.local.store();
+                }
+                MakerUpdateResult::None => {}
             }
         } else {
             // neither runtime or maker is open, draw main menu

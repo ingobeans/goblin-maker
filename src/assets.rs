@@ -25,6 +25,7 @@ pub struct Assets {
     pub create_btn: Animation,
 
     pub pause_btn: Animation,
+    pub pause_btn_topbar: Animation,
 
     pub person_icon: Texture2D,
 
@@ -79,6 +80,9 @@ impl Default for Assets {
             create_btn: Animation::from_file(include_bytes!("../assets/ui/create_btn.ase")),
 
             pause_btn: Animation::from_file(include_bytes!("../assets/ui/pause_btn.ase")),
+            pause_btn_topbar: Animation::from_file(include_bytes!(
+                "../assets/ui/pause_btn_topbar.ase"
+            )),
 
             person_icon: load_ase_texture(include_bytes!("../assets/ui/person_icon.ase"), Some(0)),
 
