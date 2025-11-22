@@ -74,13 +74,7 @@ impl<'a> LevelRenderer<'a> {
 
         for (index, (tile, spritesheet)) in tile_bundle
             .into_iter()
-            .zip(
-                [
-                    &self.assets.terrain_tileset,
-                    &self.assets.decoration_tileset,
-                ]
-                .iter(),
-            )
+            .zip([&self.assets.terrain_tileset, &self.assets.obstacles_tileset].iter())
             .enumerate()
         {
             let tile_positions = [
@@ -114,7 +108,7 @@ impl<'a> LevelRenderer<'a> {
                             (x, y),
                             vec2((x * 16) as f32, (y * 16) as f32),
                             vec2(((tile[1] - 1) % 3) as f32, ((tile[1] - 1) / 3) as f32),
-                            &self.assets.decoration_tileset,
+                            &self.assets.obstacles_tileset,
                         );
                     }
                 }
@@ -137,7 +131,7 @@ impl<'a> LevelRenderer<'a> {
         for (index, tile_bundle) in level.tiles.iter().enumerate() {
             for (tile, tileset) in tile_bundle
                 .iter()
-                .zip([&assets.terrain_tileset, &assets.decoration_tileset].iter())
+                .zip([&assets.terrain_tileset, &assets.obstacles_tileset].iter())
             {
                 if *tile == 0 {
                     continue;

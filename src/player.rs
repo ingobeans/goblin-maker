@@ -2,6 +2,12 @@ use macroquad::prelude::*;
 
 use crate::{assets::Assets, level::Level, utils::*};
 
+pub enum PlayerUpdateResult {
+    None,
+    GameOver,
+    Win,
+}
+
 pub struct Player {
     pub pos: Vec2,
     pub camera_pos: Vec2,
@@ -14,6 +20,7 @@ pub struct Player {
     pub jump_frames: f32,
 
     pub moving: bool,
+    pub died: bool,
 }
 impl Player {
     pub fn new(pos: Vec2) -> Self {
@@ -26,16 +33,21 @@ impl Player {
             grounded: true,
             moving: false,
             jump_frames: 0.0,
+            died: false,
         }
     }
-    pub fn update(&mut self, delta_time: f32, level: &Level) {
+    pub fn update(&mut self, delta_time: f32, level: &Level) -> PlayerUpdateResult {
         self.velocity.y += GRAVITY * delta_time;
         self.time += delta_time;
         let mut forces = Vec2::ZERO;
 
         let mut friction_mod = 1.0;
 
-        let input = get_input_axis();
+        let input = if self.died {
+            Vec2::ZERO
+        } else {
+            get_input_axis()
+        };
         self.moving = input.x != 0.0;
         if self.moving {
             self.move_vector = input;
@@ -60,7 +72,8 @@ impl Player {
         if self.grounded {
             self.jump_frames = 0.0;
         }
-        if is_key_down(KeyCode::Space)
+        if !self.died
+            && is_key_down(KeyCode::Space)
             && (self.grounded || (self.jump_frames > 0.0 && self.jump_frames < 0.5))
         {
             if self.jump_frames == 0.0 {
@@ -74,9 +87,40 @@ impl Player {
         self.velocity += forces * delta_time;
         self.velocity.x = self.velocity.x.clamp(-MAX_VELOCITY, MAX_VELOCITY);
 
-        (self.pos, self.grounded) =
-            update_physicsbody(self.pos, &mut self.velocity, delta_time, level, false);
-        self.camera_pos = self.pos;
+        let tile_pos = ((self.pos + vec2(4.0, 0.0)) / 16.0).floor();
+        if tile_pos.x > 0.0
+            && tile_pos.y > 0.0
+            && tile_pos.x < level.width as f32
+            && tile_pos.y < level.height() as f32
+        {
+            if !self.died {
+                let tile = level.get_tile(tile_pos.x as usize, tile_pos.y as usize);
+                if tile[1] != 0 {
+                    self.die();
+                }
+            }
+        } else if !self.died {
+            self.die();
+        }
+
+        if !self.died {
+            (self.pos, self.grounded) =
+                update_physicsbody(self.pos, &mut self.velocity, delta_time, level, false);
+        } else {
+            self.pos += self.velocity * delta_time / 3.0;
+        }
+
+        if !self.died {
+            self.camera_pos = self.pos;
+        } else if self.pos.y > self.camera_pos.y + SCREEN_HEIGHT / 2.0 {
+            return PlayerUpdateResult::GameOver;
+        }
+        PlayerUpdateResult::None
+    }
+
+    pub fn die(&mut self) {
+        self.velocity = vec2(0.0, -3.6 * 120.0);
+        self.died = true;
     }
 
     pub fn draw(&mut self, assets: &Assets) {
@@ -91,32 +135,45 @@ impl Player {
             "idle"
         };
 
-        draw_texture_ex(
-            assets
-                .player_legs
-                .get_by_name(legs_animation)
-                .get_at_time((self.time * 1000.0) as u32),
-            self.pos.floor().x - 4.0,
-            self.pos.floor().y - 8.0,
-            WHITE,
-            DrawTextureParams {
-                flip_x: self.move_vector.x < 0.0,
-                ..Default::default()
-            },
-        );
-        draw_texture_ex(
-            assets
-                .player_torso
-                .get_by_name(torso_animation)
-                .get_at_time((self.time * 1000.0) as u32),
-            self.pos.floor().x - 4.0,
-            self.pos.floor().y - 8.0,
-            WHITE,
-            DrawTextureParams {
-                flip_x: self.move_vector.x < 0.0,
-                ..Default::default()
-            },
-        );
+        if self.died {
+            draw_texture_ex(
+                &assets.player_die,
+                self.pos.floor().x - 4.0,
+                self.pos.floor().y - 8.0,
+                WHITE,
+                DrawTextureParams {
+                    flip_x: self.move_vector.x < 0.0,
+                    ..Default::default()
+                },
+            );
+        } else {
+            draw_texture_ex(
+                assets
+                    .player_legs
+                    .get_by_name(legs_animation)
+                    .get_at_time((self.time * 1000.0) as u32),
+                self.pos.floor().x - 4.0,
+                self.pos.floor().y - 8.0,
+                WHITE,
+                DrawTextureParams {
+                    flip_x: self.move_vector.x < 0.0,
+                    ..Default::default()
+                },
+            );
+            draw_texture_ex(
+                assets
+                    .player_torso
+                    .get_by_name(torso_animation)
+                    .get_at_time((self.time * 1000.0) as u32),
+                self.pos.floor().x - 4.0,
+                self.pos.floor().y - 8.0,
+                WHITE,
+                DrawTextureParams {
+                    flip_x: self.move_vector.x < 0.0,
+                    ..Default::default()
+                },
+            );
+        }
 
         // draw speedometer
         if DEBUG_ARGS.speedometer {

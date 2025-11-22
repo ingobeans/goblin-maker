@@ -1,7 +1,7 @@
 use crate::{
     assets::{Animation, Assets},
     level::{Character, Level, LevelRenderer},
-    player::{Player, update_physicsbody},
+    player::{Player, PlayerUpdateResult, update_physicsbody},
     utils::*,
 };
 use impl_new_derive::ImplNew;
@@ -14,6 +14,7 @@ struct AliveEnemy<'a> {
     pub time: f32,
     pub moving_left: bool,
     pub velocity: Vec2,
+    pub death_frames: f32,
 }
 
 pub struct GoblinRuntime<'a> {
@@ -40,6 +41,7 @@ impl<'a> GoblinRuntime<'a> {
                         0.0,
                         true,
                         Vec2::ZERO,
+                        0.0,
                     )),
                 })
                 .collect(),
@@ -59,7 +61,7 @@ impl<'a> GoblinRuntime<'a> {
         let scale_factor =
             (actual_screen_width / SCREEN_WIDTH).min(actual_screen_height / SCREEN_HEIGHT);
 
-        self.player.update(delta_time, &self.level);
+        let result = self.player.update(delta_time, &self.level);
         self.pixel_camera.target = self.player.camera_pos.floor();
         set_camera(&self.pixel_camera);
         clear_background(SKY_COLOR);
@@ -77,35 +79,59 @@ impl<'a> GoblinRuntime<'a> {
             WHITE,
             DrawTextureParams::default(),
         );
-        self.player.draw(self.assets);
-        for enemy in self.enemies.iter_mut() {
-            enemy.time += delta_time;
-            enemy.velocity.y += GRAVITY * delta_time;
-            enemy.velocity.x = if enemy.moving_left { -1.0 } else { 1.0 } * 32.0;
-            let old = enemy.velocity;
-            enemy.pos = update_physicsbody(
-                enemy.pos,
-                &mut enemy.velocity,
-                delta_time,
-                &self.level,
-                true,
-            )
-            .0;
-            if old.x.abs() > enemy.velocity.x.abs() {
-                enemy.moving_left = !enemy.moving_left;
-            }
+        self.enemies.retain_mut(|enemy| {
+            if enemy.death_frames > 0.0 {
+                enemy.death_frames += delta_time;
+                draw_texture_ex(
+                    enemy.animation.get_at_time((enemy.time * 1000.0) as u32),
+                    enemy.pos.x - 12.0,
+                    enemy.pos.y - 4.0,
+                    WHITE,
+                    DrawTextureParams {
+                        flip_x: !enemy.moving_left,
+                        dest_size: Some(vec2(32.0, 18.0)),
+                        ..Default::default()
+                    },
+                );
+            } else {
+                enemy.time += delta_time;
+                enemy.velocity.y += GRAVITY * delta_time;
+                enemy.velocity.x = if enemy.moving_left { -1.0 } else { 1.0 } * 32.0;
+                let old = enemy.velocity;
+                enemy.pos = update_physicsbody(
+                    enemy.pos,
+                    &mut enemy.velocity,
+                    delta_time,
+                    &self.level,
+                    true,
+                )
+                .0;
+                if old.x.abs() > enemy.velocity.x.abs() {
+                    enemy.moving_left = !enemy.moving_left;
+                }
 
-            draw_texture_ex(
-                enemy.animation.get_at_time((enemy.time * 1000.0) as u32),
-                enemy.pos.x - 12.0,
-                enemy.pos.y - 16.0,
-                WHITE,
-                DrawTextureParams {
-                    flip_x: !enemy.moving_left,
-                    ..Default::default()
-                },
-            );
-        }
+                draw_texture_ex(
+                    enemy.animation.get_at_time((enemy.time * 1000.0) as u32),
+                    enemy.pos.x - 12.0,
+                    enemy.pos.y - 16.0,
+                    WHITE,
+                    DrawTextureParams {
+                        flip_x: !enemy.moving_left,
+                        ..Default::default()
+                    },
+                );
+                if !self.player.died && self.player.pos.distance_squared(enemy.pos) < 200.0 {
+                    if self.player.pos.y < enemy.pos.y {
+                        enemy.death_frames += delta_time;
+                        self.player.velocity.y = -3.6 * 60.0;
+                    } else {
+                        self.player.die();
+                    }
+                }
+            }
+            enemy.death_frames < 0.5
+        });
+        self.player.draw(self.assets);
         set_default_camera();
         clear_background(BLACK);
         draw_texture_ex(
@@ -121,5 +147,18 @@ impl<'a> GoblinRuntime<'a> {
                 ..Default::default()
             },
         );
+        match result {
+            PlayerUpdateResult::GameOver => {
+                let mut level = Level {
+                    tiles: Vec::new(),
+                    width: 0,
+                    characters: Vec::new(),
+                };
+                std::mem::swap(&mut level, &mut self.level);
+                *self = GoblinRuntime::new(self.assets, level);
+                return;
+            }
+            _ => {}
+        }
     }
 }

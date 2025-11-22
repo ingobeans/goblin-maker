@@ -68,7 +68,7 @@ fn get_tab_tiles(assets: &Assets) -> [(&Spritesheet, Vec<Vec2>); 3] {
         let texture = if tab == 0 {
             &assets.terrain_tileset
         } else if tab == 1 {
-            &assets.decoration_tileset
+            &assets.obstacles_tileset
         } else {
             &assets.character_tileset
         };
@@ -353,7 +353,7 @@ impl<'a> GoblinMaker<'a> {
         let mut tab_btns = Vec::new();
         for (i, t) in [
             &self.assets.tile_btn.frames,
-            &self.assets.decoration_btn.frames,
+            &self.assets.obstacles_btn.frames,
             &self.assets.character_btn.frames,
         ]
         .iter()
@@ -515,7 +515,7 @@ impl<'a> GoblinMaker<'a> {
                 {
                     let tileset = [
                         &self.assets.terrain_tileset,
-                        &self.assets.decoration_tileset,
+                        &self.assets.obstacles_tileset,
                         &self.assets.character_tileset,
                     ][tab as usize];
                     let pos = vec2((tx * 16) as f32, (ty * 16) as f32);

@@ -7,9 +7,10 @@ use macroquad::prelude::*;
 pub struct Assets {
     pub player_torso: AnimationsGroup,
     pub player_legs: AnimationsGroup,
+    pub player_die: Texture2D,
 
     pub terrain_tileset: Spritesheet,
-    pub decoration_tileset: Spritesheet,
+    pub obstacles_tileset: Spritesheet,
     pub character_tileset: Spritesheet,
 
     pub enemies: AnimationsGroup,
@@ -30,7 +31,7 @@ pub struct Assets {
     pub delete_btn: Animation,
 
     pub tile_btn: Animation,
-    pub decoration_btn: Animation,
+    pub obstacles_btn: Animation,
     pub character_btn: Animation,
     pub handle_btn: Animation,
     pub play_btn: Animation,
@@ -49,6 +50,7 @@ impl Default for Assets {
 
             player_torso: AnimationsGroup::from_file(include_bytes!("../assets/player_torso.ase")),
             player_legs: AnimationsGroup::from_file(include_bytes!("../assets/player_legs.ase")),
+            player_die: load_ase_texture(include_bytes!("../assets/player_die.ase"), None),
 
             terrain_tileset: Spritesheet::new(
                 load_ase_texture(include_bytes!("../assets/terrain_tileset.ase"), None),
@@ -58,8 +60,8 @@ impl Default for Assets {
                 load_ase_texture(include_bytes!("../assets/terrain.ase"), Some(0)),
                 load_ase_texture(include_bytes!("../assets/terrain.ase"), Some(1)),
             ),
-            decoration_tileset: Spritesheet::new(
-                load_ase_texture(include_bytes!("../assets/decoration_tileset.ase"), Some(1)),
+            obstacles_tileset: Spritesheet::new(
+                load_ase_texture(include_bytes!("../assets/obstacles_tileset.ase"), Some(1)),
                 16.0,
             ),
             character_tileset: Spritesheet::new(
@@ -81,7 +83,7 @@ impl Default for Assets {
             delete_btn: Animation::from_file(include_bytes!("../assets/ui/delete_btn.ase")),
 
             tile_btn: Animation::from_file(include_bytes!("../assets/ui/tile_btn.ase")),
-            decoration_btn: Animation::from_file(include_bytes!("../assets/ui/decoration_btn.ase")),
+            obstacles_btn: Animation::from_file(include_bytes!("../assets/ui/obstacles_btn.ase")),
             character_btn: Animation::from_file(include_bytes!("../assets/ui/character_btn.ase")),
             handle_btn: Animation::from_file(include_bytes!("../assets/ui/handle_btn.ase")),
             play_btn: Animation::from_file(include_bytes!("../assets/ui/play_btn.ase")),
