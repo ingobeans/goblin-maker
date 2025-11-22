@@ -17,6 +17,10 @@ pub const ACCELERATION: f32 = 3600.0 / 2.0;
 pub const SCROLL_AMT: f32 = 1.1;
 pub const MIN_ZOOM: f32 = 0.001;
 
+// remember to update server when modifying these values!
+pub const MAX_LEVEL_NAME_LENGTH: usize = 20;
+pub const MAX_AUTHOR_NAME_LENGTH: usize = 25;
+
 pub const SKY_COLOR: Color = Color::from_hex(0x29adff);
 pub const MAKER_BG_COLOR: Color = Color::from_hex(0x365987);
 pub const GREEN_COLOR: Color = Color::from_hex(0x50e112);

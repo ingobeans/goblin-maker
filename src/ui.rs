@@ -61,6 +61,7 @@ pub struct UITextInput<'a> {
     pub font: (u16, &'a Font, f32),
     pub data: &'a mut TextInputData,
     pub placeholder: &'static str,
+    pub max_length: usize,
 }
 impl<'a> UITextInput<'a> {
     pub fn is_hovered(&self) -> bool {
@@ -83,7 +84,9 @@ impl<'a> UITextInput<'a> {
         if self.data.selected {
             let mut backspace_pressed = false;
             if let Some(key) = get_char_pressed() {
-                if key.is_alphanumeric() && key.is_ascii() || key == ' ' {
+                if (key.is_alphanumeric() && key.is_ascii() || key == ' ')
+                    && self.data.text.len() < self.max_length
+                {
                     self.data.text.insert(self.data.cursor_pos, key);
                     self.data.cursor_pos += 1;
                 } else if key == '\u{8}' {

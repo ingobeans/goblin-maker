@@ -392,6 +392,7 @@ impl<'a> MainMenu<'a> {
                         (font_size, &self.assets.font, 3.0 * scale_factor),
                         data,
                         "Enter level name",
+                        MAX_LEVEL_NAME_LENGTH,
                     );
                     input.draw();
                 }
@@ -417,6 +418,7 @@ impl<'a> MainMenu<'a> {
                         (font_size, &self.assets.font, 3.0 * scale_factor),
                         name_input,
                         "Enter level name",
+                        MAX_LEVEL_NAME_LENGTH,
                     );
                     input.draw();
                     let mut input = UITextInput::new(
@@ -429,6 +431,7 @@ impl<'a> MainMenu<'a> {
                         (font_size, &self.assets.font, 3.0 * scale_factor),
                         author_input,
                         "Enter author name",
+                        MAX_AUTHOR_NAME_LENGTH,
                     );
                     input.draw();
                 }

@@ -27,6 +27,10 @@ def get(id: str):
         return "error:invalid id"
     if not "-" in id:
         return "error:missing author information"
+    if len(id.split("-")[0]) > 20:
+        return "error:too long name"
+    if len(id.split("-")[1]) > 25:
+        return "error:too long author name"
     path = os.path.join(levels_path,id)
     if not os.path.isfile(path):
         return "error:level doesn't exist"
@@ -39,6 +43,10 @@ def upload(id: str):
         return "error:invalid id"
     if not "-" in id:
         return "error:missing author information"
+    if len(id.split("-")[0]) > 20:
+        return "error:too long name"
+    if len(id.split("-")[1]) > 25:
+        return "error:too long author name"
     data = request.headers.get("data")
     if data is None:
         return "error:missing data!"
