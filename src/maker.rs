@@ -177,7 +177,7 @@ impl<'a> GoblinMaker<'a> {
                 }
             }
             Tool::Eraser => {
-                if tab_index == 2 {
+                if self.sidebar.1 == 2 {
                     let pos = ((tx * 16) as f32, (ty * 16) as f32);
 
                     self.level.characters.retain(|f| f.0 != pos);

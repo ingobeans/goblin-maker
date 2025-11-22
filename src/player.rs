@@ -7,7 +7,6 @@ pub struct Player {
     pub camera_pos: Vec2,
     pub velocity: Vec2,
     pub move_vector: Vec2,
-    pub crouching: bool,
 
     pub time: f32,
 
@@ -26,7 +25,6 @@ impl Player {
             time: 0.0,
             grounded: true,
             moving: false,
-            crouching: false,
             jump_frames: 0.0,
         }
     }
@@ -76,13 +74,8 @@ impl Player {
         self.velocity += forces * delta_time;
         self.velocity.x = self.velocity.x.clamp(-MAX_VELOCITY, MAX_VELOCITY);
 
-        (self.pos, self.grounded) = update_physicsbody(
-            self.pos,
-            &mut self.velocity,
-            delta_time,
-            level,
-            !self.crouching,
-        );
+        (self.pos, self.grounded) =
+            update_physicsbody(self.pos, &mut self.velocity, delta_time, level, false);
         self.camera_pos = self.pos;
     }
 
