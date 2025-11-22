@@ -21,6 +21,8 @@ pub struct Assets {
     pub menu_play_btn: Animation,
     pub menu_create_btn: Animation,
 
+    pub create_btn: Animation,
+
     pub tile_btn: Animation,
     pub decoration_btn: Animation,
     pub character_btn: Animation,
@@ -64,6 +66,7 @@ impl Default for Assets {
             menu_create_btn: Animation::from_file(include_bytes!(
                 "../assets/ui/menu_create_btn.ase"
             )),
+            create_btn: Animation::from_file(include_bytes!("../assets/ui/create_btn.ase")),
 
             tile_btn: Animation::from_file(include_bytes!("../assets/ui/tile_btn.ase")),
             decoration_btn: Animation::from_file(include_bytes!("../assets/ui/decoration_btn.ase")),

@@ -11,6 +11,7 @@ enum Dragging {
     No,
     UiOwned,
     WorldOwned(u8),
+    MenuOwned,
 }
 
 #[derive(Sequence, PartialEq, Eq)]
@@ -127,7 +128,7 @@ impl<'a> GoblinMaker<'a> {
             camera_zoom,
             camera_pos,
             sidebar: (999.0, 0, 1.0),
-            dragging: Dragging::No,
+            dragging: Dragging::MenuOwned,
             selected_tile: Some((0, 0)),
             tool: Tool::Pencil,
         }
@@ -399,6 +400,7 @@ impl<'a> GoblinMaker<'a> {
         }
 
         let clicking_ui = matches!(self.dragging, Dragging::UiOwned);
+        let allow_world_mouse = matches!(self.dragging, Dragging::WorldOwned(_));
 
         let mouse_delta = mouse_delta_position();
         let mut scroll_origin = vec2(mouse_x, mouse_y);
@@ -450,7 +452,7 @@ impl<'a> GoblinMaker<'a> {
         }
 
         // handle clicking
-        if !clicking_ui
+        if allow_world_mouse
             && is_mouse_button_down(MouseButton::Left)
             && let Some((tx, ty)) = cursor_tile
             && let Some((tile_index, tab_index)) = self.selected_tile

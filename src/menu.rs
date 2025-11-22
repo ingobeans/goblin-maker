@@ -142,18 +142,12 @@ impl<'a> MainMenu<'a> {
                 },
             );
             if matches!(self.level_menu, LevelMenuType::LocalLevels) {
-                let btn = UITextButton::new(
+                let btn = UIImageButton::new(
                     offset * scale_factor + buttons_pos,
-                    size * scale_factor,
-                    "CREATE NEW".to_string(),
-                    SKY_COLOR,
-                    MAKER_BG_COLOR,
-                    (scale_factor, BLACK),
-                    (
-                        (12.5 * scale_factor) as u16,
-                        &self.assets.font,
-                        3.0 * scale_factor,
-                    ),
+                    &self.assets.create_btn.frames[0].0,
+                    &self.assets.create_btn.frames[1].0,
+                    scale_factor,
+                    false,
                 );
                 btn.draw();
                 if btn.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
