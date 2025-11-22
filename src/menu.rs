@@ -144,15 +144,24 @@ impl<'a> MainMenu<'a> {
             let size = vec2(size.x - 6.0, 25.0);
             let offset = vec2(0.0, size.y + 5.0);
 
-            let (names, title): (Vec<&String>, &str) = match &self.level_menu {
+            let (names, title): (Vec<String>, &str) = match &self.level_menu {
                 LevelMenuType::Closed => {
                     panic!()
                 }
-                LevelMenuType::BrowseOnline => {
-                    (data.online_levels.iter().collect(), "Online Levels")
-                }
+                LevelMenuType::BrowseOnline => (
+                    data.online_levels
+                        .iter()
+                        .map(|f| f.split_once("-").unwrap().0.to_string())
+                        .collect(),
+                    "Online Levels",
+                ),
                 LevelMenuType::LocalLevels => (
-                    data.local.user_levels.iter().map(|f| &f.0).rev().collect(),
+                    data.local
+                        .user_levels
+                        .iter()
+                        .map(|f| f.0.clone())
+                        .rev()
+                        .collect(),
                     "My Levels",
                 ),
             };
@@ -261,6 +270,32 @@ impl<'a> MainMenu<'a> {
                     ),
                 );
                 btn.draw();
+                if matches!(self.level_menu, LevelMenuType::BrowseOnline) {
+                    draw_texture_ex(
+                        &self.assets.person_icon,
+                        btn.pos.x + 2.0 * scale_factor,
+                        btn.pos.y + size.y * scale_factor - 8.0 * scale_factor,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(6.0, 6.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
+                    let author = data.online_levels[i].split_once("-").unwrap().1;
+
+                    let font_size = (10.0 * scale_factor) as u16;
+                    draw_text_ex(
+                        author,
+                        btn.pos.x + 10.0 * scale_factor,
+                        btn.pos.y + size.y * scale_factor - 4.0 * scale_factor,
+                        TextParams {
+                            color: LIGHTGRAY,
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                }
                 for btn in item_buttons {
                     btn.draw();
                 }
@@ -268,7 +303,7 @@ impl<'a> MainMenu<'a> {
                 if !unallow_click && btn.is_hovered() && mouse_down {
                     match self.level_menu {
                         LevelMenuType::BrowseOnline => {
-                            let name = name.to_string();
+                            let name = data.online_levels[i].to_string();
                             data.download_level(&name);
                             self.popup = PopupMenu::Downloading(name);
                             break;
@@ -475,7 +510,7 @@ impl<'a> MainMenu<'a> {
                     let font_size = (12.0 * scale_factor) as u16;
                     draw_text_ex(
                         &text,
-                        pos.x + (10.0) * scale_factor,
+                        pos.x + (2.0) * scale_factor,
                         pos.y + (font_size) as f32 + 40.0 * scale_factor,
                         TextParams {
                             font_size,

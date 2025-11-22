@@ -3,7 +3,7 @@
 use std::{collections::HashMap, fs::read, path::PathBuf};
 
 use base64::{Engine, prelude::BASE64_STANDARD};
-use macroquad::prelude::{info, warn};
+use macroquad::prelude::warn;
 use nanoserde::{DeBin, SerBin};
 use quad_net::http_request::Request;
 
@@ -14,12 +14,6 @@ pub const SERVER_BASE_ADRESS: &str = "http://127.0.0.1:5462";
 pub enum NetworkResult {
     Success,
     Fail(String),
-}
-
-#[derive(SerBin, DeBin)]
-pub struct OnlineLevel {
-    pub level: Level,
-    pub author: String,
 }
 
 pub struct Data {
@@ -35,13 +29,12 @@ pub struct Data {
 }
 impl Data {
     pub fn upload_level(&mut self, level: Level, name: String, author: String) {
-        let level = OnlineLevel { level, author };
         let mut buffer = Vec::new();
         level.ser_bin(&mut buffer);
         let base64 = BASE64_STANDARD.encode(buffer);
         self.uploading = Some(
             quad_net::http_request::RequestBuilder::new(&format!(
-                "{}/upload/{name}",
+                "{}/upload/{name}-{author}",
                 SERVER_BASE_ADRESS
             ))
             .header("data", &base64)
@@ -89,7 +82,14 @@ impl Data {
             if let Some(result) = request.try_recv() {
                 self.uploading = None;
                 self.upload_result = Some(match result {
-                    Ok(_) => NetworkResult::Success,
+                    Ok(data) => {
+                        if data.starts_with("error:") {
+                            let msg = data.trim_start_matches("error:").to_string();
+                            NetworkResult::Fail(msg)
+                        } else {
+                            NetworkResult::Success
+                        }
+                    }
                     Err(e) => NetworkResult::Fail(e.to_string()),
                 })
             }
@@ -114,24 +114,32 @@ impl Data {
             if let Some(result) = request.try_recv() {
                 match result {
                     Ok(data) => {
-                        fn deserialize(buffer: &[u8]) -> Option<OnlineLevel> {
-                            OnlineLevel::de_bin(&mut 0, buffer).ok()
+                        fn deserialize(buffer: &[u8]) -> Option<Level> {
+                            Level::de_bin(&mut 0, buffer).ok()
                         }
-                        let Ok(decoded) = BASE64_STANDARD.decode(data) else {
-                            let e = format!("level '{}' couldn't be base64 decoded", *name);
+                        if data.starts_with("error:") {
+                            let msg = data.trim_start_matches("error:").to_string();
                             self.download_result =
-                                Some((name.to_string(), NetworkResult::Fail(e.to_string())));
-                            return false;
-                        };
-                        let Some(level) = deserialize(&decoded) else {
-                            let e =
-                                format!("level '{}' couldn't be deserialized to level data", *name);
-                            self.download_result =
-                                Some((name.to_string(), NetworkResult::Fail(e.to_string())));
-                            return false;
-                        };
-                        self.cached_online_levels.insert(name.clone(), level.level);
-                        self.download_result = Some((name.to_string(), NetworkResult::Success));
+                                Some((name.to_string(), NetworkResult::Fail(msg)));
+                        } else {
+                            let Ok(decoded) = BASE64_STANDARD.decode(data) else {
+                                let e = format!("level '{}' couldn't be base64 decoded", *name);
+                                self.download_result =
+                                    Some((name.to_string(), NetworkResult::Fail(e.to_string())));
+                                return false;
+                            };
+                            let Some(level) = deserialize(&decoded) else {
+                                let e = format!(
+                                    "level '{}' couldn't be deserialized to level data",
+                                    *name
+                                );
+                                self.download_result =
+                                    Some((name.to_string(), NetworkResult::Fail(e.to_string())));
+                                return false;
+                            };
+                            self.cached_online_levels.insert(name.clone(), level);
+                            self.download_result = Some((name.to_string(), NetworkResult::Success));
+                        }
                     }
                     Err(e) => {
                         self.download_result =

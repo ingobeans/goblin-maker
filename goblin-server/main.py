@@ -23,25 +23,29 @@ def list():
 @app.route("/get/<id>")
 @cross_origin()
 def get(id: str):
-    if not all([c.isalnum() and c.isascii() or c == ' ' for c in id]):
-        return "invalid :("
+    if not all([c.isalnum() and c.isascii() or c == ' ' or c == '-' for c in id]):
+        return "error:invalid id"
+    if not "-" in id:
+        return "error:missing author information"
     path = os.path.join(levels_path,id)
     if not os.path.isfile(path):
-        return "level doesn't exist :("
+        return "error:level doesn't exist"
     with open(path,"r") as f:
         return f.read()
 @app.route("/upload/<id>")
 @cross_origin()
 def upload(id: str):
-    if not all([c.isalnum() and c.isascii() or c == ' ' for c in id]):
-        return "invalid :("
+    if not all([c.isalnum() and c.isascii() or c == ' ' or c == '-' for c in id]):
+        return "error:invalid id"
+    if not "-" in id:
+        return "error:missing author information"
     data = request.headers.get("data")
     if data is None:
-        return "missing data! :("
+        return "error:missing data!"
 
     path = os.path.join(levels_path,id)
     if os.path.isfile(path):
-        return "level name taken! :("
+        return "error:level name taken!"
     with open(path,"w") as f:
         f.write(data)
     return "ok"

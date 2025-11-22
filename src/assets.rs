@@ -23,6 +23,8 @@ pub struct Assets {
 
     pub create_btn: Animation,
 
+    pub person_icon: Texture2D,
+
     pub upload_btn: Animation,
     pub rename_btn: Animation,
     pub delete_btn: Animation,
@@ -71,6 +73,8 @@ impl Default for Assets {
                 "../assets/ui/menu_create_btn.ase"
             )),
             create_btn: Animation::from_file(include_bytes!("../assets/ui/create_btn.ase")),
+
+            person_icon: load_ase_texture(include_bytes!("../assets/ui/person_icon.ase"), Some(0)),
 
             upload_btn: Animation::from_file(include_bytes!("../assets/ui/upload_btn.ase")),
             rename_btn: Animation::from_file(include_bytes!("../assets/ui/rename_btn.ase")),
