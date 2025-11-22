@@ -11,10 +11,17 @@ enum LevelMenuType {
     BrowseOnline,
     LocalLevels,
 }
+enum PopupMenu {
+    None,
+    Delete(usize),
+    Rename(usize, String),
+    Upload(usize, String, String),
+}
 pub struct MainMenu<'a> {
     assets: &'a Assets,
     level_menu: LevelMenuType,
     time: f32,
+    popup: PopupMenu,
 }
 impl<'a> MainMenu<'a> {
     pub fn new(assets: &'a Assets) -> Self {
@@ -22,9 +29,10 @@ impl<'a> MainMenu<'a> {
             assets,
             level_menu: LevelMenuType::Closed,
             time: 0.0,
+            popup: PopupMenu::None,
         }
     }
-    pub fn update(&mut self, data: &Data) -> MenuUpdateResult {
+    pub fn update(&mut self, data: &mut Data) -> MenuUpdateResult {
         let delta_time = get_frame_time();
         let (actual_screen_width, actual_screen_height) = screen_size();
         let scale_factor =
@@ -56,6 +64,11 @@ impl<'a> MainMenu<'a> {
             false,
         );
 
+        let mut mouse_down = is_mouse_button_pressed(MouseButton::Left);
+
+        if !matches!(self.popup, PopupMenu::None) {
+            mouse_down = false;
+        }
         if !matches!(self.level_menu, LevelMenuType::Closed) {
             let size = vec2(156.0, 225.0);
             let menu_pos = vec2(
@@ -150,18 +163,65 @@ impl<'a> MainMenu<'a> {
                     false,
                 );
                 btn.draw();
-                if btn.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                if btn.is_hovered() && mouse_down {
                     return MenuUpdateResult::Create(None);
                 }
             }
 
             for (i, name) in names.iter().enumerate() {
+                let mut unallow_click = false;
+                let mut item_buttons = Vec::new();
+                if matches!(self.level_menu, LevelMenuType::LocalLevels) {
+                    let item_offset = vec2(17.0, 0.0);
+                    for (j, anim) in [
+                        &self.assets.delete_btn,
+                        &self.assets.rename_btn,
+                        &self.assets.upload_btn,
+                    ]
+                    .iter()
+                    .enumerate()
+                    {
+                        let btn = UIImageButton::new(
+                            (offset * (i + 2) as f32 + size - 16.0 - 5.0 - item_offset * j as f32)
+                                * scale_factor
+                                + buttons_pos,
+                            &anim.frames[0].0,
+                            &anim.frames[1].0,
+                            scale_factor,
+                            false,
+                        );
+                        let hover = btn.is_hovered();
+                        unallow_click |= hover;
+                        item_buttons.push(btn);
+                        if hover && mouse_down {
+                            match j {
+                                0 => {
+                                    self.popup =
+                                        PopupMenu::Delete(data.local.user_levels.len() - i - 1);
+                                }
+                                1 => {
+                                    todo!()
+                                }
+                                2 => {
+                                    todo!()
+                                }
+                                _ => {
+                                    panic!()
+                                }
+                            }
+                        }
+                    }
+                }
                 let btn = UITextButton::new(
                     (offset * (i + 2) as f32) * scale_factor + buttons_pos,
                     size * scale_factor,
                     name.to_string(),
                     SKY_COLOR,
-                    MAKER_BG_COLOR,
+                    if unallow_click {
+                        SKY_COLOR
+                    } else {
+                        MAKER_BG_COLOR
+                    },
                     (scale_factor, BLACK),
                     (
                         (12.5 * scale_factor) as u16,
@@ -170,11 +230,18 @@ impl<'a> MainMenu<'a> {
                     ),
                 );
                 btn.draw();
+                for btn in item_buttons {
+                    btn.draw();
+                }
 
-                if btn.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                if !unallow_click && btn.is_hovered() && mouse_down {
                     match self.level_menu {
                         LevelMenuType::BrowseOnline => return MenuUpdateResult::PlayOnline(i),
-                        LevelMenuType::LocalLevels => return MenuUpdateResult::Create(Some(i)),
+                        LevelMenuType::LocalLevels => {
+                            return MenuUpdateResult::Create(Some(
+                                data.local.user_levels.len() - i - 1,
+                            ));
+                        }
                         _ => {}
                     }
                 }
@@ -191,14 +258,97 @@ impl<'a> MainMenu<'a> {
                 ..Default::default()
             },
         );
+
         play_btn.draw();
         create_btn.draw();
-        if create_btn.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+
+        let popup_size = vec2(250.0, 105.0);
+        match &self.popup {
+            PopupMenu::Delete(index) => {
+                let pos = (vec2(actual_screen_width, actual_screen_height)
+                    - popup_size * scale_factor)
+                    / 2.0;
+                draw_rectangle(
+                    pos.x,
+                    pos.y,
+                    popup_size.x * scale_factor,
+                    popup_size.y * scale_factor,
+                    SKY_COLOR,
+                );
+                draw_rectangle_lines(
+                    pos.x,
+                    pos.y,
+                    popup_size.x * scale_factor,
+                    popup_size.y * scale_factor,
+                    2.0 * scale_factor,
+                    BLACK,
+                );
+                let font_size = (24.0 * scale_factor) as u16;
+                draw_text_ex(
+                    "Are you sure?",
+                    pos.x + 35.0 * scale_factor,
+                    pos.y + font_size as f32,
+                    TextParams {
+                        font_size,
+                        font: Some(&self.assets.font),
+                        ..Default::default()
+                    },
+                );
+                let button_size = vec2(90.0, 25.0);
+                let button_offset = vec2(button_size.x + 5.0, 0.0);
+                let yes = UITextButton::new(
+                    vec2(
+                        pos.x + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor,
+                        pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
+                    ),
+                    button_size * scale_factor,
+                    "Yes".to_string(),
+                    GREEN_COLOR,
+                    DARK_GREEN_COLOR,
+                    (scale_factor, BLACK),
+                    (
+                        (12.0 * scale_factor) as u16,
+                        &self.assets.font,
+                        3.0 * scale_factor,
+                    ),
+                );
+                yes.draw();
+                if yes.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                    data.local.user_levels.remove(*index);
+                    data.local.store();
+                    self.popup = PopupMenu::None;
+                }
+                let no = UITextButton::new(
+                    vec2(
+                        pos.x
+                            + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor
+                            + button_offset.x * scale_factor,
+                        pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
+                    ),
+                    button_size * scale_factor,
+                    "No".to_string(),
+                    SKY_COLOR,
+                    MAKER_BG_COLOR,
+                    (scale_factor, BLACK),
+                    (
+                        (12.0 * scale_factor) as u16,
+                        &self.assets.font,
+                        3.0 * scale_factor,
+                    ),
+                );
+                no.draw();
+                if no.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                    self.popup = PopupMenu::None;
+                }
+            }
+            _ => {}
+        }
+        if create_btn.is_hovered() && mouse_down {
             self.level_menu = LevelMenuType::LocalLevels;
             if data.local.user_levels.is_empty() {
                 return MenuUpdateResult::Create(None);
             }
-        } else if play_btn.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+        } else if play_btn.is_hovered() && mouse_down {
             self.level_menu = LevelMenuType::BrowseOnline;
         }
         MenuUpdateResult::None

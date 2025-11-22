@@ -78,7 +78,7 @@ impl<'a> GameManager<'a> {
             }
         } else {
             // neither runtime or maker is open, draw main menu
-            let result = self.menu.update(&self.data);
+            let result = self.menu.update(&mut self.data);
             if let MenuUpdateResult::Create(value) = result {
                 if let Some(index) = value {
                     let data = self.data.local.user_levels[index].clone();

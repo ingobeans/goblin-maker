@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 use nanoserde::{DeBin, SerBin};
 
 use crate::{
-    assets::{Animation, Assets, Spritesheet},
+    assets::{Assets, Spritesheet},
     utils::*,
 };
 

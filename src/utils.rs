@@ -19,6 +19,8 @@ pub const MIN_ZOOM: f32 = 0.001;
 
 pub const SKY_COLOR: Color = Color::from_hex(0x29adff);
 pub const MAKER_BG_COLOR: Color = Color::from_hex(0x365987);
+pub const GREEN_COLOR: Color = Color::from_hex(0x50e112);
+pub const DARK_GREEN_COLOR: Color = Color::from_hex(0x3fa66f);
 
 #[derive(Default)]
 pub struct DebugArgs {

@@ -23,6 +23,10 @@ pub struct Assets {
 
     pub create_btn: Animation,
 
+    pub upload_btn: Animation,
+    pub rename_btn: Animation,
+    pub delete_btn: Animation,
+
     pub tile_btn: Animation,
     pub decoration_btn: Animation,
     pub character_btn: Animation,
@@ -67,6 +71,10 @@ impl Default for Assets {
                 "../assets/ui/menu_create_btn.ase"
             )),
             create_btn: Animation::from_file(include_bytes!("../assets/ui/create_btn.ase")),
+
+            upload_btn: Animation::from_file(include_bytes!("../assets/ui/upload_btn.ase")),
+            rename_btn: Animation::from_file(include_bytes!("../assets/ui/rename_btn.ase")),
+            delete_btn: Animation::from_file(include_bytes!("../assets/ui/delete_btn.ase")),
 
             tile_btn: Animation::from_file(include_bytes!("../assets/ui/tile_btn.ase")),
             decoration_btn: Animation::from_file(include_bytes!("../assets/ui/decoration_btn.ase")),
