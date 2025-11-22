@@ -96,7 +96,7 @@ impl<'a> MainMenu<'a> {
                     (data.online_levels.iter().collect(), "Online Levels")
                 }
                 LevelMenuType::LocalLevels => (
-                    data.local.user_levels.iter().map(|f| &f.0).collect(),
+                    data.local.user_levels.iter().map(|f| &f.0).rev().collect(),
                     "My Levels",
                 ),
             };
