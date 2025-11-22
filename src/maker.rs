@@ -7,6 +7,7 @@ use crate::{
 use enum_iterator::{Sequence, all};
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
+#[derive(Debug)]
 enum Dragging {
     No,
     UiOwned,
@@ -24,7 +25,8 @@ enum Tool {
 pub enum MakerUpdateResult {
     None,
     EnterRuntime,
-    ReturnToMenu,
+    SaveAndExit,
+    ExitNoSave,
 }
 
 fn get_connected_tiles(level: &Level, tx: usize, ty: usize) -> Vec<(usize, usize)> {
@@ -66,6 +68,7 @@ pub struct GoblinMaker<'a> {
     dragging: Dragging,
     selected_tile: Option<(usize, u8)>,
     tab_tiles: [(&'a Spritesheet, Vec<Vec2>); 3],
+    menu_open: bool,
     tool: Tool,
 }
 
@@ -136,6 +139,7 @@ impl<'a> GoblinMaker<'a> {
             sidebar: (999.0, 0, 1.0),
             dragging: Dragging::MenuOwned,
             selected_tile: Some((0, 0)),
+            menu_open: false,
             tool: Tool::Pencil,
         }
     }
@@ -232,6 +236,9 @@ impl<'a> GoblinMaker<'a> {
         };
         if !is_mouse_button_down(MouseButton::Left) {
             self.dragging = Dragging::No;
+            if self.menu_open {
+                self.dragging = Dragging::UiOwned;
+            }
         }
 
         let mut scroll = mouse_wheel().1;
@@ -320,7 +327,7 @@ impl<'a> GoblinMaker<'a> {
         );
         let mut result = MakerUpdateResult::None;
         if is_key_pressed(KeyCode::Escape) || (pause_btn.is_hovered() && clicking) {
-            result = MakerUpdateResult::ReturnToMenu;
+            self.menu_open = true;
         }
         pause_btn.draw();
 
@@ -401,7 +408,7 @@ impl<'a> GoblinMaker<'a> {
             || tab_btns.iter().any(|f| f.is_hovered())
             || tool_btns.iter().any(|f| f.is_hovered())
             || tile_btns.iter().any(|f| f.is_hovered());
-        if ui_hovered && clicking {
+        if (ui_hovered && clicking) || self.menu_open {
             self.dragging = Dragging::UiOwned;
         } else if clicking {
             // find what layer it is we are clicking.
@@ -608,6 +615,75 @@ impl<'a> GoblinMaker<'a> {
             btn.draw();
         }
         play_btn.draw();
+
+        if self.menu_open {
+            let size = vec2(150.0, 150.0);
+            let pos = ((vec2(actual_screen_width, actual_screen_height) - size * scale_factor)
+                / 2.0)
+                .floor();
+            let rect = UIRect::new(
+                pos,
+                size * scale_factor,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+            );
+            rect.draw();
+            let font_size = (20.0 * scale_factor) as u16;
+            draw_text_ex(
+                "Paused",
+                pos.x + 5.0 * scale_factor,
+                pos.y + font_size as f32,
+                TextParams {
+                    font_size,
+                    font: Some(&self.assets.font),
+                    ..Default::default()
+                },
+            );
+            let font_size = (12.0 * scale_factor) as u16;
+            let btn_size = vec2(135.0, 20.0);
+            let resume = UITextButton::new(
+                pos + vec2((size.x - btn_size.x) / 2.0, size.y - 3.0 * btn_size.y - 9.0)
+                    * scale_factor,
+                btn_size * scale_factor,
+                "Resume".to_string(),
+                SKY_COLOR,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+                (font_size, &self.assets.font, 5.0 * scale_factor),
+            );
+            if resume.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                self.menu_open = false;
+            }
+            resume.draw();
+            let save_no_exit = UITextButton::new(
+                pos + vec2((size.x - btn_size.x) / 2.0, size.y - 2.0 * btn_size.y - 7.0)
+                    * scale_factor,
+                btn_size * scale_factor,
+                "Exit without Saving".to_string(),
+                SKY_COLOR,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+                (font_size, &self.assets.font, 5.0 * scale_factor),
+            );
+            save_no_exit.draw();
+            if save_no_exit.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                return MakerUpdateResult::ExitNoSave;
+            }
+            let save_and_exit = UITextButton::new(
+                pos + vec2((size.x - btn_size.x) / 2.0, size.y - btn_size.y - 5.0) * scale_factor,
+                btn_size * scale_factor,
+                "Save and Exit".to_string(),
+                SKY_COLOR,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+                (font_size, &self.assets.font, 5.0 * scale_factor),
+            );
+            save_and_exit.draw();
+            if save_and_exit.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                return MakerUpdateResult::SaveAndExit;
+            }
+        }
+
         result
     }
 }

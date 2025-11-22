@@ -52,7 +52,10 @@ impl<'a> GameManager<'a> {
                 MakerUpdateResult::EnterRuntime => {
                     self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone(), None));
                 }
-                MakerUpdateResult::ReturnToMenu => {
+                MakerUpdateResult::ExitNoSave => {
+                    self.maker = None;
+                }
+                MakerUpdateResult::SaveAndExit => {
                     let maker = self.maker.take().unwrap();
                     let level = maker.level;
                     let name = if let Some(name) = maker.name {
