@@ -1,10 +1,10 @@
-use crate::{assets::Assets, data::*, ui::*, utils::*};
+use crate::{assets::Assets, data::*, level::Level, ui::*, utils::*};
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 pub enum MenuUpdateResult {
     None,
     Create(Option<usize>),
-    PlayOnline(usize),
+    PlayOnline(Level),
 }
 enum LevelMenuType {
     Closed,
@@ -16,6 +16,17 @@ enum PopupMenu {
     Delete(usize),
     Rename(usize, TextInputData),
     Upload(usize, TextInputData, TextInputData),
+    Uploading(String),
+    Downloading(String),
+    Error(String),
+}
+impl PopupMenu {
+    fn yes_button(&self) -> bool {
+        match self {
+            PopupMenu::Error(_) | PopupMenu::Uploading(_) | PopupMenu::Downloading(_) => false,
+            _ => true,
+        }
+    }
 }
 pub struct MainMenu<'a> {
     assets: &'a Assets,
@@ -63,6 +74,9 @@ impl<'a> MainMenu<'a> {
             scale_factor,
             false,
         );
+
+        let received_upload_result = data.upload_result.take();
+        let received_download_result = data.download_result.take();
 
         let mut mouse_down = is_mouse_button_pressed(MouseButton::Left);
 
@@ -200,21 +214,25 @@ impl<'a> MainMenu<'a> {
                                         PopupMenu::Delete(data.local.user_levels.len() - i - 1);
                                 }
                                 1 => {
-                                    let mut text_data = TextInputData::default();
-                                    text_data.text = data.local.user_levels
-                                        [data.local.user_levels.len() - i - 1]
-                                        .0
-                                        .clone();
-                                    text_data.cursor_pos = text_data.text.len();
                                     self.popup = PopupMenu::Rename(
                                         data.local.user_levels.len() - i - 1,
-                                        text_data,
+                                        TextInputData::from_text(
+                                            data.local.user_levels
+                                                [data.local.user_levels.len() - i - 1]
+                                                .0
+                                                .clone(),
+                                        ),
                                     );
                                 }
                                 2 => {
                                     self.popup = PopupMenu::Upload(
                                         data.local.user_levels.len() - i - 1,
-                                        TextInputData::default(),
+                                        TextInputData::from_text(
+                                            data.local.user_levels
+                                                [data.local.user_levels.len() - i - 1]
+                                                .0
+                                                .clone(),
+                                        ),
                                         TextInputData::default(),
                                     );
                                 }
@@ -249,7 +267,12 @@ impl<'a> MainMenu<'a> {
 
                 if !unallow_click && btn.is_hovered() && mouse_down {
                     match self.level_menu {
-                        LevelMenuType::BrowseOnline => return MenuUpdateResult::PlayOnline(i),
+                        LevelMenuType::BrowseOnline => {
+                            let name = name.to_string();
+                            data.download_level(&name);
+                            self.popup = PopupMenu::Downloading(name);
+                            break;
+                        }
                         LevelMenuType::LocalLevels => {
                             return MenuUpdateResult::Create(Some(
                                 data.local.user_levels.len() - i - 1,
@@ -275,7 +298,11 @@ impl<'a> MainMenu<'a> {
         play_btn.draw();
         create_btn.draw();
 
-        let popup_size = vec2(250.0, 105.0);
+        let popup_size = if !matches!(self.popup, PopupMenu::Upload(_, _, _)) {
+            vec2(250.0, 105.0)
+        } else {
+            vec2(250.0, 150.0)
+        };
         if !matches!(self.popup, PopupMenu::None) {
             let pos =
                 (vec2(actual_screen_width, actual_screen_height) - popup_size * scale_factor) / 2.0;
@@ -329,45 +356,199 @@ impl<'a> MainMenu<'a> {
                         (scale_factor, BLACK),
                         (font_size, &self.assets.font, 3.0 * scale_factor),
                         data,
+                        "Enter level name",
                     );
                     input.draw();
+                }
+                PopupMenu::Upload(_, name_input, author_input) => {
+                    draw_text_ex(
+                        "Upload level",
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                    let size = vec2(225.0, 25.0);
+                    let font_size = (12.0 * scale_factor) as u16;
+                    let mut input = UITextInput::new(
+                        pos + vec2((popup_size.x - size.x) / 2.0, 36.0) * scale_factor,
+                        size * scale_factor,
+                        SKY_COLOR,
+                        MAKER_BG_COLOR,
+                        (scale_factor, BLACK),
+                        (font_size, &self.assets.font, 3.0 * scale_factor),
+                        name_input,
+                        "Enter level name",
+                    );
+                    input.draw();
+                    let mut input = UITextInput::new(
+                        pos + vec2((popup_size.x - size.x) / 2.0, 36.0 + size.y + 5.0)
+                            * scale_factor,
+                        size * scale_factor,
+                        SKY_COLOR,
+                        MAKER_BG_COLOR,
+                        (scale_factor, BLACK),
+                        (font_size, &self.assets.font, 3.0 * scale_factor),
+                        author_input,
+                        "Enter author name",
+                    );
+                    input.draw();
+                }
+                PopupMenu::Uploading(_) => {
+                    draw_text_ex(
+                        "Uploading...",
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                    draw_texture_ex(
+                        self.assets.spinner.get_at_time((self.time * 1000.0) as u32),
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32 + 5.0 * scale_factor,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(40.0, 40.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
+                    if let Some(result) = received_upload_result {
+                        match result {
+                            NetworkResult::Success => {
+                                self.popup = PopupMenu::None;
+                                data.update_level_list();
+                                self.level_menu = LevelMenuType::BrowseOnline;
+                            }
+                            NetworkResult::Fail(e) => self.popup = PopupMenu::Error(e),
+                        }
+                    }
+                }
+                PopupMenu::Downloading(_) => {
+                    draw_text_ex(
+                        "Downloading level...",
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                    draw_texture_ex(
+                        self.assets.spinner.get_at_time((self.time * 1000.0) as u32),
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32 + 5.0 * scale_factor,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(40.0, 40.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
+                    if let Some((level, result)) = received_download_result {
+                        match result {
+                            NetworkResult::Success => {
+                                self.popup = PopupMenu::None;
+                                let level = data.cached_online_levels.get(&level).unwrap().clone();
+                                return MenuUpdateResult::PlayOnline(level);
+                            }
+                            NetworkResult::Fail(e) => self.popup = PopupMenu::Error(e),
+                        }
+                    }
+                }
+                PopupMenu::Error(text) => {
+                    draw_text_ex(
+                        "Error!",
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                    let font_size = (12.0 * scale_factor) as u16;
+                    draw_text_ex(
+                        &text,
+                        pos.x + (10.0) * scale_factor,
+                        pos.y + (font_size) as f32 + 40.0 * scale_factor,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
                 }
                 _ => {}
             }
             let button_size = vec2(90.0, 25.0);
             let button_offset = vec2(button_size.x + 5.0, 0.0);
-            let yes = UITextButton::new(
-                vec2(
-                    pos.x + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor,
-                    pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
-                ),
-                button_size * scale_factor,
-                "Yes".to_string(),
-                GREEN_COLOR,
-                DARK_GREEN_COLOR,
-                (scale_factor, BLACK),
-                (
-                    (12.0 * scale_factor) as u16,
-                    &self.assets.font,
-                    3.0 * scale_factor,
-                ),
-            );
-            yes.draw();
-            if yes.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
-                match &self.popup {
-                    PopupMenu::Delete(index) => {
-                        data.local.user_levels.remove(*index);
-                        data.local.store();
-                        self.popup = PopupMenu::None;
-                    }
-                    PopupMenu::Rename(index, text_data) => {
-                        if !data.local.user_levels.iter().any(|f| f.0 == text_data.text) {
-                            data.local.user_levels[*index].0 = text_data.text.clone();
-                            self.popup = PopupMenu::None;
+
+            if self.popup.yes_button() {
+                let yes = UITextButton::new(
+                    vec2(
+                        pos.x + (popup_size.x / 2.0 - button_size.x - 5.0) * scale_factor,
+                        pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
+                    ),
+                    button_size * scale_factor,
+                    "Yes".to_string(),
+                    GREEN_COLOR,
+                    DARK_GREEN_COLOR,
+                    (scale_factor, BLACK),
+                    (
+                        (12.0 * scale_factor) as u16,
+                        &self.assets.font,
+                        3.0 * scale_factor,
+                    ),
+                );
+                yes.draw();
+                if yes.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                    match &self.popup {
+                        PopupMenu::Delete(index) => {
+                            data.local.user_levels.remove(*index);
                             data.local.store();
+                            self.popup = PopupMenu::None;
                         }
+                        PopupMenu::Rename(index, text_data) => {
+                            if !data
+                                .local
+                                .user_levels
+                                .iter()
+                                .enumerate()
+                                .filter(|(i, _)| index != i)
+                                .any(|(_, f)| f.0 == text_data.text)
+                            {
+                                data.local.user_levels[*index].0 = text_data.text.clone();
+                                self.popup = PopupMenu::None;
+                                data.local.store();
+                            }
+                        }
+                        PopupMenu::Upload(index, name_data, author_data) => {
+                            if !data
+                                .local
+                                .user_levels
+                                .iter()
+                                .enumerate()
+                                .filter(|(i, _)| index != i)
+                                .any(|(_, f)| f.0 == name_data.text)
+                            {
+                                data.local.user_levels[*index].0 = name_data.text.clone();
+                                data.local.store();
+                                data.upload_level(
+                                    data.local.user_levels[*index].clone().1,
+                                    name_data.text.to_string(),
+                                    author_data.text.to_string(),
+                                );
+                                self.popup = PopupMenu::Uploading(name_data.text.to_string());
+                            }
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
             }
             let no = UITextButton::new(
@@ -378,7 +559,7 @@ impl<'a> MainMenu<'a> {
                     pos.y + (popup_size.y - button_size.y - 9.0) * scale_factor,
                 ),
                 button_size * scale_factor,
-                "No".to_string(),
+                "Cancel".to_string(),
                 SKY_COLOR,
                 MAKER_BG_COLOR,
                 (scale_factor, BLACK),

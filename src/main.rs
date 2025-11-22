@@ -52,7 +52,7 @@ impl<'a> GameManager<'a> {
                 name
             } else {
                 let mut i = 0;
-                let mut name = String::new();
+                let mut name;
                 loop {
                     i += 1;
                     name = format!("Unnamed {i}");
@@ -79,13 +79,19 @@ impl<'a> GameManager<'a> {
         } else {
             // neither runtime or maker is open, draw main menu
             let result = self.menu.update(&mut self.data);
-            if let MenuUpdateResult::Create(value) = result {
-                if let Some(index) = value {
-                    let data = self.data.local.user_levels[index].clone();
-                    self.maker = Some(GoblinMaker::from(self.assets, data.1, Some(data.0)));
-                } else {
-                    self.maker = Some(GoblinMaker::new(self.assets));
+            match result {
+                MenuUpdateResult::Create(value) => {
+                    if let Some(index) = value {
+                        let data = self.data.local.user_levels[index].clone();
+                        self.maker = Some(GoblinMaker::from(self.assets, data.1, Some(data.0)));
+                    } else {
+                        self.maker = Some(GoblinMaker::new(self.assets));
+                    }
                 }
+                MenuUpdateResult::PlayOnline(level) => {
+                    self.runtime = Some(GoblinRuntime::new(self.assets, level))
+                }
+                _ => {}
             }
         }
         if DEBUG_ARGS.fps_counter {

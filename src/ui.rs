@@ -42,6 +42,14 @@ pub struct TextInputData {
     pub cursor_pos: usize,
     pub text: String,
 }
+impl TextInputData {
+    pub fn from_text(text: String) -> Self {
+        let mut data = Self::default();
+        data.cursor_pos = text.len();
+        data.text = text;
+        data
+    }
+}
 
 #[derive(ImplNew)]
 pub struct UITextInput<'a> {
@@ -52,6 +60,7 @@ pub struct UITextInput<'a> {
     pub border: (f32, Color),
     pub font: (u16, &'a Font, f32),
     pub data: &'a mut TextInputData,
+    pub placeholder: &'static str,
 }
 impl<'a> UITextInput<'a> {
     pub fn is_hovered(&self) -> bool {
@@ -71,33 +80,35 @@ impl<'a> UITextInput<'a> {
         }
 
         // handle key events
-        let mut backspace_pressed = false;
-        if let Some(key) = get_char_pressed() {
-            if key.is_alphanumeric() && key.is_ascii() || key == ' ' {
-                self.data.text.insert(self.data.cursor_pos, key);
-                self.data.cursor_pos += 1;
-            } else if key == '\u{8}' {
-                backspace_pressed = true
+        if self.data.selected {
+            let mut backspace_pressed = false;
+            if let Some(key) = get_char_pressed() {
+                if key.is_alphanumeric() && key.is_ascii() || key == ' ' {
+                    self.data.text.insert(self.data.cursor_pos, key);
+                    self.data.cursor_pos += 1;
+                } else if key == '\u{8}' {
+                    backspace_pressed = true
+                }
+            } else if is_key_pressed(KeyCode::Left) {
+                self.data.cursor_pos = self.data.cursor_pos.saturating_sub(1);
+            } else if is_key_pressed(KeyCode::Right) {
+                self.data.cursor_pos = (self.data.cursor_pos + 1).min(self.data.text.len());
+            } else if is_key_pressed(KeyCode::Delete) {
+                if self.data.cursor_pos < self.data.text.len() {
+                    self.data.text.remove(self.data.cursor_pos);
+                }
+            } else if is_key_pressed(KeyCode::Home) {
+                self.data.cursor_pos = 0;
+            } else if is_key_pressed(KeyCode::End) {
+                self.data.cursor_pos = self.data.text.len();
+            } else if is_key_pressed(KeyCode::Backspace) {
+                backspace_pressed = true;
             }
-        } else if is_key_pressed(KeyCode::Left) {
-            self.data.cursor_pos = self.data.cursor_pos.saturating_sub(1);
-        } else if is_key_pressed(KeyCode::Right) {
-            self.data.cursor_pos = (self.data.cursor_pos + 1).min(self.data.text.len());
-        } else if is_key_pressed(KeyCode::Delete) {
-            if self.data.cursor_pos < self.data.text.len() {
+
+            if backspace_pressed && self.data.cursor_pos > 0 {
+                self.data.cursor_pos = self.data.cursor_pos.saturating_sub(1);
                 self.data.text.remove(self.data.cursor_pos);
             }
-        } else if is_key_pressed(KeyCode::Home) {
-            self.data.cursor_pos = 0;
-        } else if is_key_pressed(KeyCode::End) {
-            self.data.cursor_pos = self.data.text.len();
-        } else if is_key_pressed(KeyCode::Backspace) {
-            backspace_pressed = true;
-        }
-
-        if backspace_pressed && self.data.cursor_pos > 0 {
-            self.data.cursor_pos = self.data.cursor_pos.saturating_sub(1);
-            self.data.text.remove(self.data.cursor_pos);
         }
 
         draw_rectangle(
@@ -148,13 +159,19 @@ impl<'a> UITextInput<'a> {
                 },
             );
         } else {
+            let (text, color): (&str, Color) = if self.data.text.is_empty() {
+                (self.placeholder, LIGHTGRAY)
+            } else {
+                (&self.data.text, WHITE)
+            };
             draw_text_ex(
-                &self.data.text,
+                text,
                 self.pos.x + self.font.2,
                 self.pos.y + self.font.0 as f32,
                 TextParams {
                     font_size: self.font.0,
                     font: Some(self.font.1),
+                    color,
                     ..Default::default()
                 },
             );

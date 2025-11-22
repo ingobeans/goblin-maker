@@ -506,7 +506,7 @@ impl<'a> GoblinMaker<'a> {
                 if let Some((index, tab)) = self.selected_tile
                     && let Some((tx, ty)) = cursor_tile
                     && {
-                        if self.sidebar.1 == 2 {
+                        if tab == 2 {
                             true
                         } else {
                             self.level.get_tile(tx, ty)[tab as usize] != (index + 1) as u8
