@@ -17,6 +17,7 @@ struct AliveEnemy<'a> {
     pub velocity: Vec2,
     pub death_frames: f32,
 }
+#[derive(Clone, Copy)]
 enum RuntimeMenu {
     None,
     Paused,
@@ -319,7 +320,9 @@ impl<'a> GoblinRuntime<'a> {
                     characters: Vec::new(),
                 };
                 std::mem::swap(&mut level, &mut self.level);
-                *self = GoblinRuntime::new(self.assets, level, self.level_details.clone());
+                let mut new = GoblinRuntime::new(self.assets, level, self.level_details.clone());
+                new.menu = self.menu;
+                *self = new;
             }
             _ => {}
         }
