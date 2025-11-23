@@ -112,7 +112,7 @@ impl<'a> MainMenu<'a> {
                     draw_texture_ex(
                         self.assets.spinner.get_at_time((self.time * 1000.0) as u32),
                         menu_pos.x + (menu_size.x / 2.0 - 20.0) * scale_factor,
-                        menu_pos.y + 40.0 * scale_factor,
+                        menu_pos.y + 70.0 * scale_factor,
                         WHITE,
                         DrawTextureParams {
                             dest_size: Some(vec2(40.0, 40.0) * scale_factor),
