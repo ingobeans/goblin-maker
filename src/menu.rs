@@ -180,6 +180,10 @@ impl<'a> MainMenu<'a> {
             buttons_pos.y += self.scroll * scale_factor;
 
             for (i, name) in names.iter().enumerate() {
+                let y = (offset.y * (i + 2) as f32) * scale_factor + buttons_pos.y;
+                let outside_scroll_box = y + size.y * scale_factor
+                    < menu_pos.y + 61.0 * scale_factor
+                    || y > menu_pos.y + menu_size.y * scale_factor;
                 let mut unallow_click = false;
                 let mut item_buttons = Vec::new();
                 if matches!(self.level_menu, LevelMenuType::LocalLevels) {
@@ -204,7 +208,7 @@ impl<'a> MainMenu<'a> {
                         let hover = btn.is_hovered();
                         unallow_click |= hover;
                         item_buttons.push(btn);
-                        if hover && mouse_down {
+                        if hover && mouse_down && !outside_scroll_box {
                             match j {
                                 0 => {
                                     self.popup =
@@ -368,7 +372,7 @@ impl<'a> MainMenu<'a> {
                     }
                 }
 
-                if !unallow_click && btn.is_hovered() && mouse_down {
+                if !unallow_click && !outside_scroll_box && btn.is_hovered() && mouse_down {
                     match self.level_menu {
                         LevelMenuType::BrowseOnline => {
                             let name = data.online_levels[i].0.to_string();
