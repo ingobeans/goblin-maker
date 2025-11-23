@@ -26,8 +26,29 @@ pub struct Data {
     pub uploading: Option<Request>,
     pub upload_result: Option<NetworkResult>,
     pub download_result: Option<(String, NetworkResult)>,
+    pub verified_levels: HashMap<String, bool>,
 }
 impl Data {
+    pub fn rename_level(&mut self, index: usize, mut new_name: String) -> bool {
+        if !self
+            .local
+            .user_levels
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| &index != i)
+            .any(|(_, f)| f.0 == new_name)
+        {
+            let old_name = &self.local.user_levels[index].0;
+            if let Some(value) = self.verified_levels.remove(old_name) {
+                self.verified_levels.insert(new_name.clone(), value);
+                println!("moved verified levels entry {old_name} to {new_name} (value: {value}");
+            }
+            self.local.user_levels[index].0 = new_name;
+            true
+        } else {
+            false
+        }
+    }
     pub fn upload_level(&mut self, level: Level, name: String, author: String) {
         let mut buffer = Vec::new();
         level.ser_bin(&mut buffer);
@@ -75,6 +96,7 @@ impl Data {
             failed_list_request: false,
             upload_result: None,
             download_result: None,
+            verified_levels: HashMap::new(),
         }
     }
     pub fn update(&mut self) {

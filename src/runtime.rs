@@ -38,6 +38,11 @@ impl RuntimeMenu {
         }
     }
 }
+pub enum RuntimeResult {
+    None,
+    Win,
+    Exit,
+}
 pub struct GoblinRuntime<'a> {
     assets: &'a Assets,
     player: Player,
@@ -79,7 +84,7 @@ impl<'a> GoblinRuntime<'a> {
             level_details: level_name,
         }
     }
-    pub fn update(&mut self) -> bool {
+    pub fn update(&mut self) -> RuntimeResult {
         // cap delta time to a minimum of 60 fps.
         let delta_time = get_frame_time().min(1.0 / 60.0);
         let (actual_screen_width, actual_screen_height) = screen_size();
@@ -236,6 +241,20 @@ impl<'a> GoblinRuntime<'a> {
                         ..Default::default()
                     },
                 );
+            } else if matches!(self.menu, RuntimeMenu::Win) {
+                let font_size = (8.0 * scale_factor) as u16;
+                draw_multiline_text_ex(
+                    &format!("Level is now verified until further\nchanges and can be uploaded!"),
+                    pos.x + 5.0 * scale_factor,
+                    pos.y + font_size as f32 + 30.0 * scale_factor,
+                    None,
+                    TextParams {
+                        color: LIGHTGRAY,
+                        font_size,
+                        font: Some(&self.assets.font),
+                        ..Default::default()
+                    },
+                );
             }
 
             let btn_size = vec2(135.0, 20.0);
@@ -255,10 +274,15 @@ impl<'a> GoblinRuntime<'a> {
                 }
                 resume.draw();
             }
+            let return_text = if self.level_details.is_some() {
+                "Return to menu"
+            } else {
+                "Return to editor"
+            };
             let return_to_menu = UITextButton::new(
                 pos + vec2((size.x - btn_size.x) / 2.0, size.y - btn_size.y - 5.0) * scale_factor,
                 btn_size * scale_factor,
-                "Return to menu".to_string(),
+                return_text.to_string(),
                 SKY_COLOR,
                 MAKER_BG_COLOR,
                 (scale_factor, BLACK),
@@ -266,7 +290,10 @@ impl<'a> GoblinRuntime<'a> {
             );
             return_to_menu.draw();
             if return_to_menu.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
-                return true;
+                if matches!(self.menu, RuntimeMenu::Win) {
+                    return RuntimeResult::Win;
+                }
+                return RuntimeResult::Exit;
             }
         } else {
             let pause_btn = UIImageButton::new(
@@ -293,10 +320,9 @@ impl<'a> GoblinRuntime<'a> {
                 };
                 std::mem::swap(&mut level, &mut self.level);
                 *self = GoblinRuntime::new(self.assets, level, self.level_details.clone());
-                return false;
             }
             _ => {}
         }
-        false
+        RuntimeResult::None
     }
 }

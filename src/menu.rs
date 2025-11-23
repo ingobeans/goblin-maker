@@ -16,6 +16,7 @@ enum PopupMenu {
     Delete(usize),
     Rename(usize, TextInputData),
     Upload(usize, TextInputData, TextInputData),
+    VerificationRequired,
     Uploading(String),
     Downloading(String),
     Error(String),
@@ -23,7 +24,10 @@ enum PopupMenu {
 impl PopupMenu {
     fn yes_button(&self) -> bool {
         match self {
-            PopupMenu::Error(_) | PopupMenu::Uploading(_) | PopupMenu::Downloading(_) => false,
+            PopupMenu::Error(_)
+            | PopupMenu::Uploading(_)
+            | PopupMenu::Downloading(_)
+            | PopupMenu::VerificationRequired => false,
             _ => true,
         }
     }
@@ -234,16 +238,17 @@ impl<'a> MainMenu<'a> {
                                     );
                                 }
                                 2 => {
-                                    self.popup = PopupMenu::Upload(
-                                        data.local.user_levels.len() - i - 1,
-                                        TextInputData::from_text(
-                                            data.local.user_levels
-                                                [data.local.user_levels.len() - i - 1]
-                                                .0
-                                                .clone(),
-                                        ),
-                                        TextInputData::default(),
-                                    );
+                                    let level = &data.local.user_levels
+                                        [data.local.user_levels.len() - i - 1];
+                                    if *data.verified_levels.get(&level.0).unwrap_or(&false) {
+                                        self.popup = PopupMenu::Upload(
+                                            data.local.user_levels.len() - i - 1,
+                                            TextInputData::from_text(level.0.clone()),
+                                            TextInputData::default(),
+                                        );
+                                    } else {
+                                        self.popup = PopupMenu::VerificationRequired;
+                                    }
                                 }
                                 _ => {
                                     panic!()
@@ -298,6 +303,21 @@ impl<'a> MainMenu<'a> {
                 }
                 for btn in item_buttons {
                     btn.draw();
+                }
+
+                if matches!(self.level_menu, LevelMenuType::LocalLevels) {
+                    if *data.verified_levels.get(name).unwrap_or(&false) {
+                        draw_texture_ex(
+                            &self.assets.check,
+                            btn.pos.x + 2.0 * scale_factor,
+                            btn.pos.y + size.y * scale_factor - 12.0 * scale_factor,
+                            WHITE,
+                            DrawTextureParams {
+                                dest_size: Some(vec2(10.0, 10.0) * scale_factor),
+                                ..Default::default()
+                            },
+                        );
+                    }
                 }
 
                 if !unallow_click && btn.is_hovered() && mouse_down {
@@ -527,6 +547,30 @@ impl<'a> MainMenu<'a> {
                         },
                     );
                 }
+                PopupMenu::VerificationRequired => {
+                    draw_text_ex(
+                        "Upload level",
+                        pos.x + 10.0 * scale_factor,
+                        pos.y + font_size as f32,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                    let font_size = (10.0 * scale_factor) as u16;
+                    draw_multiline_text_ex(
+                        "You need to play and complete this\nlevel once without making any changes\nto verify it before uploading.",
+                        pos.x + (2.0) * scale_factor,
+                        pos.y + (font_size) as f32 + 30.0 * scale_factor,
+                        None,
+                        TextParams {
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                }
                 _ => {}
             }
             let button_size = vec2(90.0, 25.0);
@@ -558,29 +602,13 @@ impl<'a> MainMenu<'a> {
                             self.popup = PopupMenu::None;
                         }
                         PopupMenu::Rename(index, text_data) => {
-                            if !data
-                                .local
-                                .user_levels
-                                .iter()
-                                .enumerate()
-                                .filter(|(i, _)| index != i)
-                                .any(|(_, f)| f.0 == text_data.text)
-                            {
-                                data.local.user_levels[*index].0 = text_data.text.clone();
+                            if data.rename_level(*index, text_data.text.clone()) {
                                 self.popup = PopupMenu::None;
                                 data.local.store();
                             }
                         }
                         PopupMenu::Upload(index, name_data, author_data) => {
-                            if !data
-                                .local
-                                .user_levels
-                                .iter()
-                                .enumerate()
-                                .filter(|(i, _)| index != i)
-                                .any(|(_, f)| f.0 == name_data.text)
-                            {
-                                data.local.user_levels[*index].0 = name_data.text.clone();
+                            if data.rename_level(*index, name_data.text.clone()) {
                                 data.local.store();
                                 data.upload_level(
                                     data.local.user_levels[*index].clone().1,

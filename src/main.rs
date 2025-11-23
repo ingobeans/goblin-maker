@@ -43,8 +43,13 @@ impl<'a> GameManager<'a> {
         self.data.update();
         if let Some(runtime) = &mut self.runtime {
             let result = runtime.update();
-            if result {
+            if !matches!(result, RuntimeResult::None) {
                 self.runtime = None;
+                if matches!(result, RuntimeResult::Win)
+                    && let Some(maker) = &mut self.maker
+                {
+                    maker.verified = true
+                }
             }
         } else if let Some(maker) = &mut self.maker {
             let result = maker.update();
@@ -72,6 +77,11 @@ impl<'a> GameManager<'a> {
                         }
                         name
                     };
+                    if maker.modified || maker.verified {
+                        self.data
+                            .verified_levels
+                            .insert(name.clone(), maker.verified);
+                    }
                     if let Some(old) = self.data.local.user_levels.iter_mut().find(|f| f.0 == name)
                     {
                         old.1 = level;

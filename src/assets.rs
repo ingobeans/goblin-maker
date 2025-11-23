@@ -41,6 +41,7 @@ pub struct Assets {
     pub tool_btns: [Animation; 3],
     pub spinner: Animation,
     pub warning: Texture2D,
+    pub check: Texture2D,
 }
 impl Default for Assets {
     fn default() -> Self {
@@ -97,6 +98,7 @@ impl Default for Assets {
             play_btn: Animation::from_file(include_bytes!("../assets/ui/play_btn.ase")),
             spinner: Animation::from_file(include_bytes!("../assets/ui/spinner.ase")),
             warning: load_ase_texture(include_bytes!("../assets/ui/warning.ase"), None),
+            check: load_ase_texture(include_bytes!("../assets/ui/check.ase"), None),
 
             tool_btns: [
                 Animation::from_file(include_bytes!("../assets/ui/pencil_btn.ase")),

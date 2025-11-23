@@ -61,6 +61,8 @@ pub struct GoblinMaker<'a> {
     assets: &'a Assets,
     pub name: Option<String>,
     pub level: Level,
+    pub verified: bool,
+    pub modified: bool,
     level_renderer: LevelRenderer<'a>,
     camera_pos: Vec2,
     camera_zoom: f32,
@@ -130,6 +132,8 @@ impl<'a> GoblinMaker<'a> {
 
         Self {
             name,
+            verified: false,
+            modified: false,
             tab_tiles: get_tab_tiles(assets),
             level_renderer,
             assets,
@@ -169,6 +173,7 @@ impl<'a> GoblinMaker<'a> {
         Self::from(assets, level, None)
     }
     fn use_tool(&mut self, tx: usize, ty: usize, tile_index: usize, tab_index: u8) {
+        self.modified = true;
         match self.tool {
             Tool::Pencil => {
                 if tab_index == 2 {
