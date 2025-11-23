@@ -3,7 +3,7 @@
 use std::{collections::HashMap, fs::read, path::PathBuf};
 
 use base64::{Engine, prelude::BASE64_STANDARD};
-use macroquad::prelude::warn;
+use macroquad::prelude::{info, warn};
 use nanoserde::{DeBin, SerBin};
 use quad_net::http_request::Request;
 

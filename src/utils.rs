@@ -34,11 +34,13 @@ pub struct DebugArgs {
     pub server_base_url: String,
 }
 
+const DEFAULT_BASE_URL: &str = "https://goblin-server.ingobeans.hackclub.app";
+
 pub static DEBUG_ARGS: LazyLock<DebugArgs> = LazyLock::new(|| {
     #[cfg(debug_assertions)]
     {
         let args: Vec<String> = std::env::args().collect();
-        let mut url = "https://goblin-server.ingobeans.hackclub.app".to_string();
+        let mut url = DEFAULT_BASE_URL.to_string();
         for arg in args.iter() {
             if arg.starts_with("url=") {
                 let u = arg.trim_start_matches("url=");
@@ -54,7 +56,9 @@ pub static DEBUG_ARGS: LazyLock<DebugArgs> = LazyLock::new(|| {
     }
     #[cfg(not(debug_assertions))]
     {
-        DebugArgs::default()
+        let mut args = DebugArgs::default();
+        args.server_base_url = DEFAULT_BASE_URL.to_string();
+        args
     }
 });
 
