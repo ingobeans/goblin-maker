@@ -42,7 +42,7 @@ def list():
             details[id] = [0,int(time.time())]
             dump_details()
         level_details = details[id]
-        item = id + "_" + str(level_details[0]) + "-" + datetime.fromtimestamp(level_details[1]).strftime("%d/%m")
+        item = id + "_" + str(level_details[0]) + "-" + datetime.fromtimestamp(level_details[1]).strftime("%d/%m") + "-" + str(level_details[1])
         result.append(item)
     return ",".join(result)
 @app.route("/get/<id>")

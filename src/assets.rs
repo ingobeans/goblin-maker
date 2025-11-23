@@ -44,6 +44,11 @@ pub struct Assets {
     pub spinner: Animation,
     pub warning: Texture2D,
     pub check: Texture2D,
+
+    pub reload_btn: Animation,
+    pub sort_time_btn: Animation,
+    pub sort_downloads_btn: Animation,
+    pub sort_name_btn: Animation,
 }
 impl Default for Assets {
     fn default() -> Self {
@@ -106,6 +111,13 @@ impl Default for Assets {
             spinner: Animation::from_file(include_bytes!("../assets/ui/spinner.ase")),
             warning: load_ase_texture(include_bytes!("../assets/ui/warning.ase"), None),
             check: load_ase_texture(include_bytes!("../assets/ui/check.ase"), None),
+
+            reload_btn: Animation::from_file(include_bytes!("../assets/ui/reload_btn.ase")),
+            sort_downloads_btn: Animation::from_file(include_bytes!(
+                "../assets/ui/sort_downloads_btn.ase"
+            )),
+            sort_name_btn: Animation::from_file(include_bytes!("../assets/ui/sort_name_btn.ase")),
+            sort_time_btn: Animation::from_file(include_bytes!("../assets/ui/sort_time_btn.ase")),
 
             tool_btns: [
                 Animation::from_file(include_bytes!("../assets/ui/pencil_btn.ase")),

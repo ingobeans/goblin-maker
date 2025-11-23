@@ -429,6 +429,50 @@ impl<'a> MainMenu<'a> {
                 if btn.is_hovered() && mouse_down {
                     return MenuUpdateResult::Create(None);
                 }
+            } else {
+                let reload_btn = UIImageButton::new(
+                    offset * scale_factor + buttons_pos,
+                    &self.assets.reload_btn.frames[0].0,
+                    &self.assets.reload_btn.frames[1].0,
+                    scale_factor,
+                    false,
+                );
+                reload_btn.draw();
+                if reload_btn.is_hovered() && mouse_down {
+                    data.update_level_list();
+                    data.online_levels = Vec::new();
+                }
+                let sort_btn_offset = vec2(26.0, 0.0);
+                for (i, (anim, mode)) in [
+                    (&self.assets.sort_name_btn, LevelSorting::Name),
+                    (&self.assets.sort_downloads_btn, LevelSorting::Downloads),
+                    (&self.assets.sort_time_btn, LevelSorting::Time),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    let active = data.sorting == mode;
+                    let t = if active {
+                        &anim.frames[0].0
+                    } else {
+                        &anim.frames[1].0
+                    };
+                    let btn = UIImageButton::new(
+                        offset * scale_factor
+                            + buttons_pos
+                            + vec2(menu_size.x * scale_factor - 3.0 * scale_factor, 0.0)
+                            - sort_btn_offset * scale_factor * (i + 1) as f32,
+                        t,
+                        t,
+                        scale_factor,
+                        false,
+                    );
+                    btn.draw();
+                    if btn.is_hovered() && mouse_down {
+                        data.sorting = mode;
+                        data.sort();
+                    }
+                }
             }
             draw_text_ex(
                 title,

@@ -13,10 +13,15 @@ pub enum NetworkResult {
     Success,
     Fail(String),
 }
-
+#[derive(PartialEq, Eq)]
+pub enum LevelSorting {
+    Name,
+    Time,
+    Downloads,
+}
 pub struct Data {
     pub local: LocalData,
-    pub online_levels: Vec<(String, u32, String)>,
+    pub online_levels: Vec<(String, u32, String, u64)>,
     pub cached_online_levels: HashMap<String, Level>,
     pub list_request: Option<Request>,
     pub fetch_requests: Vec<(Request, String)>,
@@ -25,9 +30,10 @@ pub struct Data {
     pub upload_result: Option<NetworkResult>,
     pub download_result: Option<(String, NetworkResult)>,
     pub verified_levels: HashMap<String, bool>,
+    pub sorting: LevelSorting,
 }
 impl Data {
-    pub fn rename_level(&mut self, index: usize, mut new_name: String) -> bool {
+    pub fn rename_level(&mut self, index: usize, new_name: String) -> bool {
         if !self
             .local
             .user_levels
@@ -95,6 +101,21 @@ impl Data {
             upload_result: None,
             download_result: None,
             verified_levels: HashMap::new(),
+            sorting: LevelSorting::Downloads,
+        }
+    }
+    pub fn sort(&mut self) {
+        match self.sorting {
+            LevelSorting::Downloads => {
+                self.online_levels.sort_by(|a, b| b.1.cmp(&a.1));
+            }
+            LevelSorting::Name => {
+                self.online_levels
+                    .sort_by(|a, b| a.0.to_ascii_lowercase().cmp(&b.0.to_ascii_lowercase()));
+            }
+            LevelSorting::Time => {
+                self.online_levels.sort_by(|a, b| b.3.cmp(&a.3));
+            }
         }
     }
     pub fn update(&mut self) {
@@ -124,14 +145,20 @@ impl Data {
                                 .split(",")
                                 .map(|f| {
                                     let (name, info) = f.split_once("_").unwrap();
-                                    let (downloads, date) = info.split_once("-").unwrap();
+                                    let [downloads, date, timestamp] =
+                                        info.split("-").collect::<Vec<&str>>()[..]
+                                    else {
+                                        panic!("bad level info data! {f}");
+                                    };
                                     let downloads: u32 = downloads.parse().unwrap();
+                                    let timestamp: u64 = timestamp.parse().unwrap();
                                     let name = name.to_string();
-                                    (name, downloads, date.to_string())
+                                    (name, downloads, date.to_string(), timestamp)
                                 })
                                 .collect();
                         }
                         self.failed_list_request = false;
+                        self.sort();
                         //info!("fetched level list: {:?}", self.online_levels);
                     }
                     Err(_) => {
