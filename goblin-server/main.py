@@ -92,4 +92,7 @@ def upload(id: str):
     details[id] = [0,int(time.time())]
     dump_details()
     return "ok"
-app.run(port=5462)
+
+
+if __name__ == "__main__":
+    app.run(port=5462)
