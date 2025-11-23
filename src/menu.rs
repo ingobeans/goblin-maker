@@ -324,8 +324,17 @@ impl<'a> MainMenu<'a> {
                     match self.level_menu {
                         LevelMenuType::BrowseOnline => {
                             let name = data.online_levels[i].to_string();
-                            data.download_level(&name);
-                            self.popup = PopupMenu::Downloading(name);
+                            if let Some(level) = data.cached_online_levels.get(&name) {
+                                let (name, author) = name.split_once("-").unwrap();
+                                return MenuUpdateResult::PlayOnline(
+                                    level.clone(),
+                                    name.to_string(),
+                                    author.to_string(),
+                                );
+                            } else {
+                                data.download_level(&name);
+                                self.popup = PopupMenu::Downloading(name);
+                            }
                             break;
                         }
                         LevelMenuType::LocalLevels => {
