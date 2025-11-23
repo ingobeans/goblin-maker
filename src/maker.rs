@@ -384,6 +384,14 @@ impl<'a> GoblinMaker<'a> {
             tab_btns.push(btn);
         }
 
+        if is_key_pressed(KeyCode::Key1) {
+            self.sidebar.1 = 0
+        } else if is_key_pressed(KeyCode::Key2) {
+            self.sidebar.1 = 1
+        } else if is_key_pressed(KeyCode::Key3) {
+            self.sidebar.1 = 2;
+        }
+
         let ui_hovered = topbar.is_hovered()
             || pause_btn.is_hovered()
             || sidebar_rect.is_hovered()
