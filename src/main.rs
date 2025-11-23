@@ -55,7 +55,6 @@ impl<'a> GameManager<'a> {
                             .level_details
                             .as_ref()
                             .unwrap();
-                        println!("{}-{}", details.0, details.1);
                         self.data
                             .local
                             .completed_online_levels
