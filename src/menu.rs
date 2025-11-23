@@ -124,7 +124,7 @@ impl<'a> MainMenu<'a> {
                     // if fetch request failed, show error icon
                     let pos = vec2(
                         menu_pos.x + (menu_size.x / 2.0 - 151.0 / 2.0) * scale_factor,
-                        menu_pos.y + 40.0 * scale_factor,
+                        menu_pos.y + 70.0 * scale_factor,
                     );
                     draw_texture_ex(
                         &self.assets.warning,
