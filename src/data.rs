@@ -187,6 +187,7 @@ impl Data {
 #[derive(DeBin, SerBin, Default)]
 pub struct LocalData {
     pub user_levels: Vec<(String, Level)>,
+    pub completed_online_levels: Vec<String>,
 }
 impl LocalData {
     fn get_save_path() -> Option<PathBuf> {

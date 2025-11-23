@@ -197,7 +197,7 @@ impl<'a> UITextButton<'a> {
         (self.pos.x..self.pos.x + self.size.x).contains(&mouse.0)
             && (self.pos.y..self.pos.y + self.size.y).contains(&mouse.1)
     }
-    pub fn draw(&self) {
+    pub fn draw(&self) -> f32 {
         let color = if self.is_hovered() {
             self.hover_color
         } else {
@@ -227,7 +227,8 @@ impl<'a> UITextButton<'a> {
                 font: Some(self.font.1),
                 ..Default::default()
             },
-        );
+        )
+        .width
     }
 }
 

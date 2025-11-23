@@ -44,12 +44,25 @@ impl<'a> GameManager<'a> {
         if let Some(runtime) = &mut self.runtime {
             let result = runtime.update();
             if !matches!(result, RuntimeResult::None) {
-                self.runtime = None;
-                if matches!(result, RuntimeResult::Win)
-                    && let Some(maker) = &mut self.maker
-                {
-                    maker.verified = true
+                if matches!(result, RuntimeResult::Win) {
+                    if let Some(maker) = &mut self.maker {
+                        maker.verified = true
+                    } else {
+                        let details = self
+                            .runtime
+                            .as_ref()
+                            .unwrap()
+                            .level_details
+                            .as_ref()
+                            .unwrap();
+                        println!("{}-{}", details.0, details.1);
+                        self.data
+                            .local
+                            .completed_online_levels
+                            .push(format!("{}-{}", details.0, details.1));
+                    }
                 }
+                self.runtime = None;
             }
         } else if let Some(maker) = &mut self.maker {
             let result = maker.update();

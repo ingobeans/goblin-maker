@@ -51,7 +51,7 @@ pub struct GoblinRuntime<'a> {
     pixel_camera: Camera2D,
     enemies: Vec<AliveEnemy<'a>>,
     menu: RuntimeMenu,
-    level_details: Option<(String, String)>,
+    pub level_details: Option<(String, String)>,
 }
 
 impl<'a> GoblinRuntime<'a> {

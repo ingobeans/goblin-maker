@@ -274,7 +274,7 @@ impl<'a> MainMenu<'a> {
                         3.0 * scale_factor,
                     ),
                 );
-                btn.draw();
+                let text_width = btn.draw();
                 if matches!(self.level_menu, LevelMenuType::BrowseOnline) {
                     draw_texture_ex(
                         &self.assets.person_icon,
@@ -358,6 +358,23 @@ impl<'a> MainMenu<'a> {
                             &self.assets.check,
                             btn.pos.x + 2.0 * scale_factor,
                             btn.pos.y + size.y * scale_factor - 12.0 * scale_factor,
+                            WHITE,
+                            DrawTextureParams {
+                                dest_size: Some(vec2(10.0, 10.0) * scale_factor),
+                                ..Default::default()
+                            },
+                        );
+                    }
+                } else {
+                    if data
+                        .local
+                        .completed_online_levels
+                        .contains(&data.online_levels[i].0)
+                    {
+                        draw_texture_ex(
+                            &self.assets.check,
+                            btn.pos.x + 4.0 * scale_factor + text_width,
+                            btn.pos.y + 2.0 * scale_factor,
                             WHITE,
                             DrawTextureParams {
                                 dest_size: Some(vec2(10.0, 10.0) * scale_factor),
