@@ -78,6 +78,9 @@ impl<'a> UITextInput<'a> {
         };
         if is_mouse_button_pressed(MouseButton::Left) {
             self.data.selected = hovered;
+            if self.data.selected {
+                clear_input_queue();
+            }
         }
 
         // handle key events
