@@ -35,6 +35,7 @@ impl PopupMenu {
 pub struct MainMenu<'a> {
     assets: &'a Assets,
     level_menu: LevelMenuType,
+    scroll: f32,
     time: f32,
     popup: PopupMenu,
 }
@@ -43,6 +44,7 @@ impl<'a> MainMenu<'a> {
         Self {
             assets,
             level_menu: LevelMenuType::Closed,
+            scroll: 0.0,
             time: 0.0,
             popup: PopupMenu::None,
         }
@@ -84,18 +86,22 @@ impl<'a> MainMenu<'a> {
 
         let mut mouse_down = is_mouse_button_pressed(MouseButton::Left);
 
+        let scroll = mouse_wheel().1;
+        self.scroll += scroll / 120.0 * 12.0;
+        self.scroll = self.scroll.min(0.0);
+
         if !matches!(self.popup, PopupMenu::None) {
             mouse_down = false;
         }
         if !matches!(self.level_menu, LevelMenuType::Closed) {
-            let size = vec2(218.0, 225.0);
+            let menu_size = vec2(218.0, 225.0);
             let menu_pos = vec2(
-                actual_screen_width - 22.0 - size.x * scale_factor,
+                actual_screen_width - 22.0 - menu_size.x * scale_factor,
                 26.0 * scale_factor,
             );
             let rect = UIRect::new(
                 menu_pos,
-                size * scale_factor,
+                menu_size * scale_factor,
                 MAKER_BG_COLOR,
                 (scale_factor, BLACK),
             );
@@ -105,7 +111,7 @@ impl<'a> MainMenu<'a> {
                     // if fetch request is active, show spinner
                     draw_texture_ex(
                         self.assets.spinner.get_at_time((self.time * 1000.0) as u32),
-                        menu_pos.x + (size.x / 2.0 - 20.0) * scale_factor,
+                        menu_pos.x + (menu_size.x / 2.0 - 20.0) * scale_factor,
                         menu_pos.y + 40.0 * scale_factor,
                         WHITE,
                         DrawTextureParams {
@@ -117,7 +123,7 @@ impl<'a> MainMenu<'a> {
                 if data.failed_list_request {
                     // if fetch request failed, show error icon
                     let pos = vec2(
-                        menu_pos.x + (size.x / 2.0 - 151.0 / 2.0) * scale_factor,
+                        menu_pos.x + (menu_size.x / 2.0 - 151.0 / 2.0) * scale_factor,
                         menu_pos.y + 40.0 * scale_factor,
                     );
                     draw_texture_ex(
@@ -144,8 +150,8 @@ impl<'a> MainMenu<'a> {
                 }
             }
 
-            let buttons_pos = menu_pos + vec2(3.0, 3.0) * scale_factor;
-            let size = vec2(size.x - 6.0, 25.0);
+            let mut buttons_pos = menu_pos + vec2(3.0, 3.0) * scale_factor;
+            let size = vec2(menu_size.x - 6.0, 25.0);
             let offset = vec2(0.0, size.y + 5.0);
 
             let (names, title): (Vec<String>, &str) = match &self.level_menu {
@@ -171,29 +177,7 @@ impl<'a> MainMenu<'a> {
             };
 
             let font_size = (16.0 * scale_factor) as u16;
-            draw_text_ex(
-                title,
-                buttons_pos.x + 3.0 * scale_factor,
-                buttons_pos.y + font_size as f32,
-                TextParams {
-                    font_size,
-                    font: Some(&self.assets.font),
-                    ..Default::default()
-                },
-            );
-            if matches!(self.level_menu, LevelMenuType::LocalLevels) {
-                let btn = UIImageButton::new(
-                    offset * scale_factor + buttons_pos,
-                    &self.assets.create_btn.frames[0].0,
-                    &self.assets.create_btn.frames[1].0,
-                    scale_factor,
-                    false,
-                );
-                btn.draw();
-                if btn.is_hovered() && mouse_down {
-                    return MenuUpdateResult::Create(None);
-                }
-            }
+            buttons_pos.y += self.scroll * scale_factor;
 
             for (i, name) in names.iter().enumerate() {
                 let mut unallow_click = false;
@@ -410,6 +394,79 @@ impl<'a> MainMenu<'a> {
                     }
                 }
             }
+
+            // all the following is just to redraw the background over the areas
+            // where scroll items would overflow into
+            buttons_pos.y -= self.scroll * scale_factor;
+            let rect = UIRect::new(
+                menu_pos,
+                vec2(menu_size.x, 61.0) * scale_factor,
+                MAKER_BG_COLOR,
+                (scale_factor, BLACK),
+            );
+            rect.draw();
+            draw_line(
+                menu_pos.x,
+                menu_pos.y + menu_size.y * scale_factor,
+                menu_pos.x + menu_size.x * scale_factor,
+                menu_pos.y + menu_size.y * scale_factor,
+                2.0 * scale_factor,
+                BLACK,
+            );
+            if matches!(self.level_menu, LevelMenuType::LocalLevels) {
+                let btn = UIImageButton::new(
+                    offset * scale_factor + buttons_pos,
+                    &self.assets.create_btn.frames[0].0,
+                    &self.assets.create_btn.frames[1].0,
+                    scale_factor,
+                    false,
+                );
+                btn.draw();
+                if btn.is_hovered() && mouse_down {
+                    return MenuUpdateResult::Create(None);
+                }
+            }
+            draw_text_ex(
+                title,
+                buttons_pos.x + 3.0 * scale_factor,
+                buttons_pos.y + font_size as f32,
+                TextParams {
+                    font_size,
+                    font: Some(&self.assets.font),
+                    ..Default::default()
+                },
+            );
+            let pos = menu_pos + vec2(0.0, menu_size.y * scale_factor);
+            draw_rectangle(
+                pos.x,
+                pos.y,
+                menu_size.x * scale_factor,
+                actual_screen_height - pos.y,
+                SKY_COLOR,
+            );
+            draw_rectangle(
+                pos.x,
+                0.0,
+                menu_size.x * scale_factor,
+                menu_pos.y,
+                SKY_COLOR,
+            );
+            gl_use_material(&GRID_MATERIAL);
+            draw_rectangle(
+                pos.x,
+                pos.y,
+                menu_size.x * scale_factor,
+                actual_screen_height - pos.y,
+                SKY_COLOR,
+            );
+            draw_rectangle(
+                pos.x,
+                0.0,
+                menu_size.x * scale_factor,
+                menu_pos.y,
+                SKY_COLOR,
+            );
+            gl_use_default_material();
         }
 
         draw_texture_ex(
