@@ -658,6 +658,7 @@ impl<'a> MainMenu<'a> {
                                 self.popup = PopupMenu::None;
                                 data.update_level_list();
                                 self.level_menu = LevelMenuType::BrowseOnline;
+                                self.scroll = 0.0;
                             }
                             NetworkResult::Fail(e) => self.popup = PopupMenu::Error(e),
                         }
@@ -824,11 +825,13 @@ impl<'a> MainMenu<'a> {
 
         if create_btn.is_hovered() && mouse_down {
             self.level_menu = LevelMenuType::LocalLevels;
+            self.scroll = 0.0;
             if data.local.user_levels.is_empty() {
                 return MenuUpdateResult::Create(None);
             }
         } else if play_btn.is_hovered() && mouse_down {
             self.level_menu = LevelMenuType::BrowseOnline;
+            self.scroll = 0.0;
         }
         MenuUpdateResult::None
     }
