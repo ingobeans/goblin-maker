@@ -58,6 +58,14 @@ impl<'a> GameManager<'a> {
                     self.runtime = Some(GoblinRuntime::new(self.assets, maker.level.clone(), None));
                 }
                 MakerUpdateResult::ExitNoSave => {
+                    if !maker.modified
+                        && maker.verified
+                        && let Some(name) = &maker.name
+                    {
+                        self.data
+                            .verified_levels
+                            .insert(name.clone(), maker.verified);
+                    }
                     self.maker = None;
                 }
                 MakerUpdateResult::SaveAndExit => {

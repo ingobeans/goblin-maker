@@ -560,8 +560,8 @@ impl<'a> MainMenu<'a> {
                     );
                     let font_size = (10.0 * scale_factor) as u16;
                     draw_multiline_text_ex(
-                        "You need to play and complete this\nlevel once without making any changes\nto verify it before uploading.",
-                        pos.x + (2.0) * scale_factor,
+                        "You need to play and complete this\nlevel once without making any changes\nto verify it.",
+                        pos.x + (7.0) * scale_factor,
                         pos.y + (font_size) as f32 + 30.0 * scale_factor,
                         None,
                         TextParams {

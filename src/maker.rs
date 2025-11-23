@@ -174,6 +174,7 @@ impl<'a> GoblinMaker<'a> {
     }
     fn use_tool(&mut self, tx: usize, ty: usize, tile_index: usize, tab_index: u8) {
         self.modified = true;
+        self.verified = false;
         match self.tool {
             Tool::Pencil => {
                 if tab_index == 2 {

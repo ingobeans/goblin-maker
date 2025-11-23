@@ -41,7 +41,6 @@ impl Data {
             let old_name = &self.local.user_levels[index].0;
             if let Some(value) = self.verified_levels.remove(old_name) {
                 self.verified_levels.insert(new_name.clone(), value);
-                println!("moved verified levels entry {old_name} to {new_name} (value: {value}");
             }
             self.local.user_levels[index].0 = new_name;
             true
