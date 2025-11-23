@@ -151,23 +151,21 @@ impl<'a> GoblinMaker<'a> {
             Tool::Pencil => {
                 if tab_index == 2 {
                     // tab index 2 is character tab. place character
-                    if is_mouse_button_pressed(MouseButton::Left) {
-                        let pos = ((tx * 16) as f32, (ty * 16) as f32);
-                        // check no character is already placed there
-                        if !self.level.characters.iter().any(|f| f.0 == pos) {
-                            let character = match tile_index {
-                                0 => Character::PlayerSpawn,
-                                1 => Character::Flag,
-                                _ => Character::WanderEnemy(tile_index - 2),
-                            };
-                            let bundle = (pos, character, tile_index);
-                            if tile_index == 0 {
-                                self.level.characters[0] = bundle;
-                            } else if tile_index == 1 {
-                                self.level.characters[1] = bundle;
-                            } else {
-                                self.level.characters.push(bundle);
-                            }
+                    let pos = ((tx * 16) as f32, (ty * 16) as f32);
+                    // check no character is already placed there
+                    if !self.level.characters.iter().any(|f| f.0 == pos) {
+                        let character = match tile_index {
+                            0 => Character::PlayerSpawn,
+                            1 => Character::Flag,
+                            _ => Character::WanderEnemy(tile_index - 2),
+                        };
+                        let bundle = (pos, character, tile_index);
+                        if tile_index == 0 {
+                            self.level.characters[0] = bundle;
+                        } else if tile_index == 1 {
+                            self.level.characters[1] = bundle;
+                        } else {
+                            self.level.characters.push(bundle);
                         }
                     }
                 } else {
@@ -523,6 +521,7 @@ impl<'a> GoblinMaker<'a> {
         if let Tool::Shape = &self.tool
             && let Some(selection) = self.selected_tile
             && let Dragging::WorldOwned(_, start) = last_dragging
+            && selection.1 < 2
         {
             let end = (
                 (mouse_tile_x as usize).min(self.level.width - 1),
