@@ -9,6 +9,7 @@ use quad_net::http_request::Request;
 
 use crate::level::Level;
 
+//pub const SERVER_BASE_ADRESS: &str = "https://goblin-server.ingobeans.hackclub.app";
 pub const SERVER_BASE_ADRESS: &str = "http://127.0.0.1:5462";
 
 pub enum NetworkResult {
@@ -57,7 +58,8 @@ impl Data {
                 "{}/upload/{name}-{author}",
                 SERVER_BASE_ADRESS
             ))
-            .header("data", &base64)
+            .body(&base64)
+            .method(quad_net::http_request::Method::Post)
             .send(),
         );
     }
@@ -120,16 +122,18 @@ impl Data {
                 self.list_request = None;
                 match result {
                     Ok(data) => {
-                        self.online_levels = data
-                            .split(",")
-                            .map(|f| {
-                                let (name, info) = f.split_once("_").unwrap();
-                                let (downloads, date) = info.split_once("-").unwrap();
-                                let downloads: u32 = downloads.parse().unwrap();
-                                let name = name.to_string();
-                                (name, downloads, date.to_string())
-                            })
-                            .collect();
+                        if !data.is_empty() {
+                            self.online_levels = data
+                                .split(",")
+                                .map(|f| {
+                                    let (name, info) = f.split_once("_").unwrap();
+                                    let (downloads, date) = info.split_once("-").unwrap();
+                                    let downloads: u32 = downloads.parse().unwrap();
+                                    let name = name.to_string();
+                                    (name, downloads, date.to_string())
+                                })
+                                .collect();
+                        }
                         self.failed_list_request = false;
                         //info!("fetched level list: {:?}", self.online_levels);
                     }

@@ -68,7 +68,7 @@ def get(id: str):
     level_details = details[id]
     with open(path,"r") as f:
         return f.read()
-@app.route("/upload/<id>")
+@app.route("/upload/<id>", methods=['POST'])
 @cross_origin()
 def upload(id: str):
     global details
@@ -80,14 +80,14 @@ def upload(id: str):
         return "error:too long name"
     if len(id.split("-")[1]) > 25:
         return "error:too long author name"
-    data = request.headers.get("data")
+    data = request.data
     if data is None:
         return "error:missing data!"
 
     path = os.path.join(levels_path,id)
     if os.path.isfile(path):
         return "error:level name taken!"
-    with open(path,"w") as f:
+    with open(path,"wb") as f:
         f.write(data)
     details[id] = [0,int(time.time())]
     dump_details()
