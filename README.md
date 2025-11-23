@@ -9,12 +9,25 @@ The game comes not only with a built-in level editor, but also a level browser w
 
 The game itself was written entirely in Rust, and the server was made with Flask.
 
+When creating levels, you need the player placed somewhere, as well as the finish flag. To publish a level, you also need to complete it once without making any changes, to verify that it's possible.
+
 <img width="1021" height="575" alt="image" src="https://github.com/user-attachments/assets/51f32b34-fb0c-42c7-b74d-f0ba9547894c" />
 <sup>Browse online levels made by other players!</sup>
 
 ## About
 
 This project was made for hackclub's siege, with the theme *Framework*. Entire project was done in just a week, and I'm really proud of it! It turned out really well I think.
+
+## Controls
+
+In runtime you move with WASD and jump with Space.
+
+In editor you can select different tools, either by pressing their icon in the top left corner, or with their keybind:
+- B: Pencil tool
+- E: Eraser tool
+- S: Shape tool
+
+In the editor you can test your level by pressing the play button at the top center of the screen, or by pressing R.
 
 ## Building
 
