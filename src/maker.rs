@@ -5,13 +5,13 @@ use crate::{
     utils::*,
 };
 use enum_iterator::{Sequence, all};
-use macroquad::{miniquad::window::screen_size, prelude::*};
+use macroquad::{miniquad::window::screen_size, prelude::*, ui::Drag};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Dragging {
     No,
     UiOwned,
-    WorldOwned(u8),
+    WorldOwned(u8, (usize, usize)),
     MenuOwned,
 }
 
@@ -19,7 +19,7 @@ enum Dragging {
 enum Tool {
     Pencil,
     Eraser,
-    Bucket,
+    Shape,
 }
 
 pub enum MakerUpdateResult {
@@ -27,34 +27,6 @@ pub enum MakerUpdateResult {
     EnterRuntime,
     SaveAndExit,
     ExitNoSave,
-}
-
-fn get_connected_tiles(level: &Level, tx: usize, ty: usize) -> Vec<(usize, usize)> {
-    let mut active = vec![(tx, ty)];
-    let mut tiles = vec![(tx, ty)];
-
-    while let Some((tx, ty)) = active.pop() {
-        let mut tile_positions = vec![(tx + 1, ty), (tx, ty + 1)];
-        if ty > 0 {
-            tile_positions.push((tx, ty.saturating_sub(1)));
-        }
-        if tx > 0 {
-            tile_positions.push((tx.saturating_sub(1), ty));
-        }
-        for (tx, ty) in tile_positions {
-            if tx >= level.width || ty >= level.height() {
-                continue;
-            }
-            if tiles.contains(&(tx, ty)) {
-                continue;
-            }
-            if level.tiles[tx + ty * level.width] == [0, 0] {
-                tiles.push((tx, ty));
-                active.push((tx, ty));
-            }
-        }
-    }
-    tiles
 }
 
 pub struct GoblinMaker<'a> {
@@ -217,23 +189,14 @@ impl<'a> GoblinMaker<'a> {
                 } else {
                     // general tile placing code
                     let mut tile = self.level.get_tile(tx, ty);
-                    let Dragging::WorldOwned(layer) = self.dragging else {
+                    let Dragging::WorldOwned(layer, _) = self.dragging else {
                         panic!()
                     };
                     tile[layer as usize] = 0;
                     self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
                 }
             }
-            Tool::Bucket => {
-                if is_mouse_button_pressed(MouseButton::Left) {
-                    let tiles = get_connected_tiles(&self.level, tx, ty);
-                    for (tx, ty) in tiles.into_iter() {
-                        let mut tile = self.level.get_tile(tx, ty);
-                        tile[tab_index as usize] = tile_index as u8 + 1;
-                        self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
-                    }
-                }
-            }
+            Tool::Shape => {}
         }
     }
     pub fn update(&mut self) -> MakerUpdateResult {
@@ -257,6 +220,7 @@ impl<'a> GoblinMaker<'a> {
         } else {
             None
         };
+        let last_dragging = self.dragging;
         if !is_mouse_button_down(MouseButton::Left) {
             self.dragging = Dragging::No;
             if self.menu_open {
@@ -380,8 +344,8 @@ impl<'a> GoblinMaker<'a> {
         if is_key_pressed(KeyCode::B) || is_key_pressed(KeyCode::P) {
             self.tool = Tool::Pencil;
         }
-        if is_key_pressed(KeyCode::F) || is_key_pressed(KeyCode::G) {
-            self.tool = Tool::Bucket;
+        if is_key_pressed(KeyCode::F) || is_key_pressed(KeyCode::G) || is_key_pressed(KeyCode::S) {
+            self.tool = Tool::Shape;
         }
 
         if (clicking && play_btn.is_hovered()) || is_key_pressed(KeyCode::R) {
@@ -447,11 +411,15 @@ impl<'a> GoblinMaker<'a> {
             } else {
                 self.sidebar.1
             };
-            self.dragging = Dragging::WorldOwned(layer);
+            let start = (
+                (mouse_tile_x as usize).min(self.level.width - 1),
+                (mouse_tile_y as usize).min(self.level.height() - 1),
+            );
+            self.dragging = Dragging::WorldOwned(layer, start);
         }
 
         let clicking_ui = matches!(self.dragging, Dragging::UiOwned);
-        let allow_world_mouse = matches!(self.dragging, Dragging::WorldOwned(_));
+        let allow_world_mouse = matches!(self.dragging, Dragging::WorldOwned(_, _));
 
         let mouse_delta = mouse_delta_position();
         let mut scroll_origin = vec2(mouse_x, mouse_y);
@@ -504,9 +472,9 @@ impl<'a> GoblinMaker<'a> {
 
         // handle clicking
         if allow_world_mouse
-            && is_mouse_button_down(MouseButton::Left)
             && let Some((tx, ty)) = cursor_tile
             && let Some((tile_index, tab_index)) = self.selected_tile
+            && is_mouse_button_down(MouseButton::Left)
         {
             self.use_tool(tx, ty, tile_index, tab_index);
         }
@@ -551,9 +519,64 @@ impl<'a> GoblinMaker<'a> {
                 Some(&params),
             );
         }
+        let released = is_mouse_button_released(MouseButton::Left);
+        if let Tool::Shape = &self.tool
+            && let Some(selection) = self.selected_tile
+            && let Dragging::WorldOwned(_, start) = last_dragging
+        {
+            let end = (
+                (mouse_tile_x as usize).min(self.level.width - 1),
+                (mouse_tile_y as usize).min(self.level.height() - 1),
+            );
+
+            let tileset = if selection.1 == 0 {
+                &self.assets.terrain_tileset
+            } else {
+                &self.assets.obstacles_tileset
+            };
+            let width = end.0.abs_diff(start.0) + 1;
+            let height = end.1.abs_diff(start.1) + 1;
+            let actual_start = (start.0.min(end.0), start.1.min(end.1));
+            let params = DrawTextureParams {
+                dest_size: Some(vec2(
+                    16.0 * scale_factor * self.camera_zoom,
+                    16.0 * scale_factor * self.camera_zoom,
+                )),
+                ..Default::default()
+            };
+            for x in 0..width {
+                let x = x + actual_start.0;
+                for y in 0..height {
+                    let y = y + actual_start.1;
+                    if released {
+                        let mut old = self.level.get_tile(x, y);
+                        old[selection.1 as usize] = selection.0 as u8 + 1;
+                        self.level_renderer.set_tile(&mut self.level, x, y, old);
+                    } else {
+                        let mut params = params.clone();
+                        params.source = Some(Rect {
+                            x: (selection.0 % 3) as f32 * 16.0,
+                            y: (selection.0 / 3) as f32 * 16.0,
+                            w: 16.0,
+                            h: 16.0,
+                        });
+                        draw_texture_ex(
+                            &tileset.texture,
+                            (x * 16) as f32 * scale_factor * self.camera_zoom
+                                - self.camera_pos.x * scale_factor * self.camera_zoom,
+                            (y * 16) as f32 * scale_factor * self.camera_zoom
+                                - self.camera_pos.y * scale_factor * self.camera_zoom,
+                            WHITE.with_alpha(0.75),
+                            params,
+                        );
+                    }
+                }
+            }
+            set_default_camera();
+        }
 
         match &self.tool {
-            Tool::Pencil => {
+            Tool::Pencil | Tool::Shape => {
                 if let Some((index, tab)) = self.selected_tile
                     && let Some((tx, ty)) = cursor_tile
                     && {
@@ -613,7 +636,6 @@ impl<'a> GoblinMaker<'a> {
                     );
                 }
             }
-            _ => {}
         }
         gl_use_material(&GRID_MATERIAL);
         GRID_MATERIAL.set_uniform("zoom", self.camera_zoom);

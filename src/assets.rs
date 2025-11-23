@@ -122,7 +122,7 @@ impl Default for Assets {
             tool_btns: [
                 Animation::from_file(include_bytes!("../assets/ui/pencil_btn.ase")),
                 Animation::from_file(include_bytes!("../assets/ui/eraser_btn.ase")),
-                Animation::from_file(include_bytes!("../assets/ui/bucket_btn.ase")),
+                Animation::from_file(include_bytes!("../assets/ui/shape_btn.ase")),
             ],
         }
     }
