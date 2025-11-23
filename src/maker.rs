@@ -402,7 +402,7 @@ impl<'a> GoblinMaker<'a> {
             || tile_btns.iter().any(|f| f.is_hovered());
         if (ui_hovered && clicking) || self.menu_open {
             self.dragging = Dragging::UiOwned;
-        } else if clicking {
+        } else {
             // find what layer it is we are clicking.
 
             let tile = cursor_tile.map(|(tx, ty)| self.level.get_tile(tx, ty));
@@ -436,11 +436,22 @@ impl<'a> GoblinMaker<'a> {
                     self.sidebar.1
                 }
             };
-            let start = (
-                (mouse_tile_x as usize).min(self.level.width - 1),
-                (mouse_tile_y as usize).min(self.level.height() - 1),
-            );
-            self.dragging = Dragging::WorldOwned(layer, start);
+            if clicking {
+                let start = (
+                    (mouse_tile_x as usize).min(self.level.width - 1),
+                    (mouse_tile_y as usize).min(self.level.height() - 1),
+                );
+                self.dragging = Dragging::WorldOwned(layer, start);
+            } else if is_mouse_button_pressed(MouseButton::Right) {
+                if !(tile == Some([0, 0]) && character.is_none()) {
+                    let index = if layer < 2 {
+                        tile.unwrap()[layer as usize] as usize - 1
+                    } else {
+                        character.unwrap().2
+                    };
+                    self.selected_tile = Some((index, layer));
+                }
+            }
         }
 
         let clicking_ui = matches!(self.dragging, Dragging::UiOwned);
