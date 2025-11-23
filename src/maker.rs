@@ -352,7 +352,6 @@ impl<'a> GoblinMaker<'a> {
         if is_key_pressed(KeyCode::Escape) || (pause_btn.is_hovered() && clicking) {
             self.menu_open = true;
         }
-        pause_btn.draw();
 
         for (index, (tool, animation)) in
             all::<Tool>().zip(self.assets.tool_btns.iter()).enumerate()
