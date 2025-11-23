@@ -106,7 +106,7 @@ impl Player {
                     self.die();
                 }
             }
-        } else if !self.died {
+        } else if !self.died && self.victory == 0.0 {
             self.die();
         }
 

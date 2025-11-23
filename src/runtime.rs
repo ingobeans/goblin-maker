@@ -166,6 +166,7 @@ impl<'a> GoblinRuntime<'a> {
             enemy.death_frames < 0.5
         });
         if self.player.victory == 0.0
+            && !self.player.died
             && (self.player.pos + vec2(-4.0, 0.0))
                 .distance_squared(self.level.characters[1].0.into())
                 < 140.0
