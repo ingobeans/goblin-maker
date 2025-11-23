@@ -5,7 +5,6 @@ use crate::{assets::Assets, level::Level, utils::*};
 pub enum PlayerUpdateResult {
     None,
     GameOver,
-    Win,
 }
 
 pub struct Player {
@@ -21,6 +20,7 @@ pub struct Player {
 
     pub moving: bool,
     pub died: bool,
+    pub victory: f32,
 }
 impl Player {
     pub fn new(pos: Vec2) -> Self {
@@ -34,6 +34,7 @@ impl Player {
             moving: false,
             jump_frames: 0.0,
             died: false,
+            victory: 0.0,
         }
     }
     pub fn update(&mut self, delta_time: f32, level: &Level) -> PlayerUpdateResult {
@@ -43,11 +44,16 @@ impl Player {
 
         let mut friction_mod = 1.0;
 
-        let input = if self.died {
+        let input = if self.died || self.victory > 0.0 {
             Vec2::ZERO
         } else {
             get_input_axis()
         };
+
+        if self.victory > 0.0 {
+            self.victory += delta_time;
+        }
+
         self.moving = input.x != 0.0;
         if self.moving {
             self.move_vector = input;
@@ -73,6 +79,7 @@ impl Player {
             self.jump_frames = 0.0;
         }
         if !self.died
+            && self.victory == 0.0
             && is_key_down(KeyCode::Space)
             && (self.grounded || (self.jump_frames > 0.0 && self.jump_frames < 0.5))
         {
@@ -93,7 +100,7 @@ impl Player {
             && tile_pos.x < level.width as f32
             && tile_pos.y < level.height() as f32
         {
-            if !self.died {
+            if !self.died && self.victory == 0.0 {
                 let tile = level.get_tile(tile_pos.x as usize, tile_pos.y as usize);
                 if tile[1] != 0 {
                     self.die();
@@ -110,10 +117,13 @@ impl Player {
             self.pos += self.velocity * delta_time / 3.0;
         }
 
-        if !self.died {
+        if !self.died && self.victory == 0.0 {
             self.camera_pos = self.pos;
-        } else if self.pos.y > self.camera_pos.y + SCREEN_HEIGHT / 2.0 {
-            return PlayerUpdateResult::GameOver;
+        } else if self.died {
+            if self.pos.y > self.camera_pos.y + SCREEN_HEIGHT / 2.0 {
+                return PlayerUpdateResult::GameOver;
+            }
+        } else {
         }
         PlayerUpdateResult::None
     }

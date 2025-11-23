@@ -17,6 +17,27 @@ struct AliveEnemy<'a> {
     pub velocity: Vec2,
     pub death_frames: f32,
 }
+enum RuntimeMenu {
+    None,
+    Paused,
+    Win,
+}
+impl RuntimeMenu {
+    fn toggle(&mut self) {
+        match self {
+            RuntimeMenu::Paused => *self = RuntimeMenu::None,
+            RuntimeMenu::None => *self = RuntimeMenu::Paused,
+            RuntimeMenu::Win => {}
+        }
+    }
+    fn get_title(&self) -> &'static str {
+        match self {
+            RuntimeMenu::Paused => "Paused",
+            RuntimeMenu::Win => "Level Complete",
+            RuntimeMenu::None => panic!(),
+        }
+    }
+}
 pub struct GoblinRuntime<'a> {
     assets: &'a Assets,
     player: Player,
@@ -24,7 +45,7 @@ pub struct GoblinRuntime<'a> {
     level_renderer: LevelRenderer<'a>,
     pixel_camera: Camera2D,
     enemies: Vec<AliveEnemy<'a>>,
-    menu_open: bool,
+    menu: RuntimeMenu,
     level_details: Option<(String, String)>,
 }
 
@@ -54,7 +75,7 @@ impl<'a> GoblinRuntime<'a> {
             ),
             level,
             pixel_camera: create_camera(SCREEN_WIDTH, SCREEN_HEIGHT),
-            menu_open: false,
+            menu: RuntimeMenu::None,
             level_details: level_name,
         }
     }
@@ -124,7 +145,10 @@ impl<'a> GoblinRuntime<'a> {
                         ..Default::default()
                     },
                 );
-                if !self.player.died && self.player.pos.distance_squared(enemy.pos) < 200.0 {
+                if !self.player.died
+                    && self.player.victory == 0.0
+                    && self.player.pos.distance_squared(enemy.pos) < 200.0
+                {
                     if self.player.pos.y < enemy.pos.y {
                         enemy.death_frames += delta_time;
                         self.player.velocity.y = -3.6 * 60.0;
@@ -135,6 +159,14 @@ impl<'a> GoblinRuntime<'a> {
             }
             enemy.death_frames < 0.5
         });
+        if self.player.victory == 0.0
+            && (self.player.pos + vec2(-4.0, 0.0))
+                .distance_squared(self.level.characters[1].0.into())
+                < 140.0
+        {
+            self.player.victory = delta_time;
+            self.menu = RuntimeMenu::Win;
+        }
         self.player.draw(self.assets);
 
         self.assets.character_tileset.draw_tile(
@@ -159,11 +191,18 @@ impl<'a> GoblinRuntime<'a> {
                 ..Default::default()
             },
         );
-        if self.menu_open {
+        if !matches!(self.menu, RuntimeMenu::None) {
             let size = vec2(150.0, 150.0);
-            let pos = ((vec2(actual_screen_width, actual_screen_height) - size * scale_factor)
+            let mut pos = ((vec2(actual_screen_width, actual_screen_height) - size * scale_factor)
                 / 2.0)
                 .floor();
+
+            if matches!(self.menu, RuntimeMenu::Win) {
+                let amt = (self.player.victory / 0.6).min(1.0);
+                let amt = 2.0 * 1.5_f32.powf(amt.powi(2)) - 2.0;
+                pos.y = (-size.y * scale_factor).lerp(pos.y, amt);
+            }
+
             let rect = UIRect::new(
                 pos,
                 size * scale_factor,
@@ -173,7 +212,7 @@ impl<'a> GoblinRuntime<'a> {
             rect.draw();
             let font_size = (20.0 * scale_factor) as u16;
             draw_text_ex(
-                "Paused",
+                self.menu.get_title(),
                 pos.x + 5.0 * scale_factor,
                 pos.y + font_size as f32,
                 TextParams {
@@ -200,20 +239,22 @@ impl<'a> GoblinRuntime<'a> {
             }
 
             let btn_size = vec2(135.0, 20.0);
-            let resume = UITextButton::new(
-                pos + vec2((size.x - btn_size.x) / 2.0, size.y - 2.0 * btn_size.y - 7.0)
-                    * scale_factor,
-                btn_size * scale_factor,
-                "Resume".to_string(),
-                SKY_COLOR,
-                MAKER_BG_COLOR,
-                (scale_factor, BLACK),
-                (font_size, &self.assets.font, 5.0 * scale_factor),
-            );
-            if resume.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
-                self.menu_open = false;
+            if matches!(self.menu, RuntimeMenu::Paused) {
+                let resume = UITextButton::new(
+                    pos + vec2((size.x - btn_size.x) / 2.0, size.y - 2.0 * btn_size.y - 7.0)
+                        * scale_factor,
+                    btn_size * scale_factor,
+                    "Resume".to_string(),
+                    SKY_COLOR,
+                    MAKER_BG_COLOR,
+                    (scale_factor, BLACK),
+                    (font_size, &self.assets.font, 5.0 * scale_factor),
+                );
+                if resume.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
+                    self.menu = RuntimeMenu::None;
+                }
+                resume.draw();
             }
-            resume.draw();
             let return_to_menu = UITextButton::new(
                 pos + vec2((size.x - btn_size.x) / 2.0, size.y - btn_size.y - 5.0) * scale_factor,
                 btn_size * scale_factor,
@@ -236,12 +277,12 @@ impl<'a> GoblinRuntime<'a> {
                 false,
             );
             if pause_btn.is_hovered() && is_mouse_button_pressed(MouseButton::Left) {
-                self.menu_open = true;
+                self.menu = RuntimeMenu::Paused;
             }
             pause_btn.draw();
         }
         if is_key_pressed(KeyCode::E) || is_key_pressed(KeyCode::Escape) {
-            self.menu_open = !self.menu_open;
+            self.menu.toggle();
         }
         match result {
             PlayerUpdateResult::GameOver => {
