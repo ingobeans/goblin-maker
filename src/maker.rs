@@ -5,7 +5,7 @@ use crate::{
     utils::*,
 };
 use enum_iterator::{Sequence, all};
-use macroquad::{miniquad::window::screen_size, prelude::*, ui::Drag};
+use macroquad::{miniquad::window::screen_size, prelude::*};
 
 #[derive(Debug, Clone, Copy)]
 enum Dragging {
@@ -417,24 +417,20 @@ impl<'a> GoblinMaker<'a> {
                 if (tile[0] == 0 && tile[1] == 0) || (tile[1] != 0 && tile[0] != 0) {
                     if character.is_some() && (tile[0] == 0 && tile[1] == 0) {
                         2
+                    } else if self.sidebar.1 == 2 {
+                        0
                     } else {
-                        if self.sidebar.1 == 2 {
-                            0
-                        } else {
-                            self.sidebar.1
-                        }
+                        self.sidebar.1
                     }
                 } else if tile[0] == 0 {
                     1
                 } else {
                     0
                 }
+            } else if character.is_some() {
+                2
             } else {
-                if character.is_some() {
-                    2
-                } else {
-                    self.sidebar.1
-                }
+                self.sidebar.1
             };
             if clicking {
                 let start = (
@@ -442,8 +438,8 @@ impl<'a> GoblinMaker<'a> {
                     (mouse_tile_y as usize).min(self.level.height() - 1),
                 );
                 self.dragging = Dragging::WorldOwned(layer, start);
-            } else if is_mouse_button_pressed(MouseButton::Right) {
-                if !(tile == Some([0, 0]) && character.is_none()) {
+            } else if is_mouse_button_pressed(MouseButton::Right)
+                && !(tile == Some([0, 0]) && character.is_none()) {
                     let index = if layer < 2 {
                         tile.unwrap()[layer as usize] as usize - 1
                     } else {
@@ -451,7 +447,6 @@ impl<'a> GoblinMaker<'a> {
                     };
                     self.selected_tile = Some((index, layer));
                 }
-            }
         }
 
         let clicking_ui = matches!(self.dragging, Dragging::UiOwned);

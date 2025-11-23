@@ -17,19 +17,19 @@ enum PopupMenu {
     Rename(usize, TextInputData),
     Upload(usize, TextInputData, TextInputData),
     VerificationRequired,
-    Uploading(String),
-    Downloading(String),
+    Uploading,
+    Downloading,
     Error(String),
 }
 impl PopupMenu {
     fn yes_button(&self) -> bool {
-        match self {
+        !matches!(
+            self,
             PopupMenu::Error(_)
-            | PopupMenu::Uploading(_)
-            | PopupMenu::Downloading(_)
-            | PopupMenu::VerificationRequired => false,
-            _ => true,
-        }
+                | PopupMenu::Uploading
+                | PopupMenu::Downloading
+                | PopupMenu::VerificationRequired
+        )
     }
 }
 pub struct MainMenu<'a> {
@@ -353,23 +353,21 @@ impl<'a> MainMenu<'a> {
                             },
                         );
                     }
-                } else {
-                    if data
-                        .local
-                        .completed_online_levels
-                        .contains(&data.online_levels[i].0)
-                    {
-                        draw_texture_ex(
-                            &self.assets.check,
-                            btn.pos.x + 4.0 * scale_factor + text_width,
-                            btn.pos.y + 2.0 * scale_factor,
-                            WHITE,
-                            DrawTextureParams {
-                                dest_size: Some(vec2(10.0, 10.0) * scale_factor),
-                                ..Default::default()
-                            },
-                        );
-                    }
+                } else if data
+                    .local
+                    .completed_online_levels
+                    .contains(&data.online_levels[i].0)
+                {
+                    draw_texture_ex(
+                        &self.assets.check,
+                        btn.pos.x + 4.0 * scale_factor + text_width,
+                        btn.pos.y + 2.0 * scale_factor,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(10.0, 10.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
                 }
 
                 if !unallow_click && !outside_scroll_box && btn.is_hovered() && mouse_down {
@@ -385,7 +383,7 @@ impl<'a> MainMenu<'a> {
                                 );
                             } else {
                                 data.download_level(&name);
-                                self.popup = PopupMenu::Downloading(name);
+                                self.popup = PopupMenu::Downloading;
                             }
                             break;
                         }
@@ -633,7 +631,7 @@ impl<'a> MainMenu<'a> {
                     );
                     input.draw();
                 }
-                PopupMenu::Uploading(_) => {
+                PopupMenu::Uploading => {
                     draw_text_ex(
                         "Uploading...",
                         pos.x + 10.0 * scale_factor,
@@ -665,7 +663,7 @@ impl<'a> MainMenu<'a> {
                         }
                     }
                 }
-                PopupMenu::Downloading(_) => {
+                PopupMenu::Downloading => {
                     draw_text_ex(
                         "Downloading level...",
                         pos.x + 10.0 * scale_factor,
@@ -715,7 +713,7 @@ impl<'a> MainMenu<'a> {
                     );
                     let font_size = (12.0 * scale_factor) as u16;
                     draw_text_ex(
-                        &text,
+                        text,
                         pos.x + (2.0) * scale_factor,
                         pos.y + (font_size) as f32 + 40.0 * scale_factor,
                         TextParams {
@@ -793,7 +791,7 @@ impl<'a> MainMenu<'a> {
                                     name_data.text.to_string(),
                                     author_data.text.to_string(),
                                 );
-                                self.popup = PopupMenu::Uploading(name_data.text.to_string());
+                                self.popup = PopupMenu::Uploading;
                             }
                         }
                         _ => {}

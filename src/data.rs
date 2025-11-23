@@ -3,7 +3,7 @@
 use std::{collections::HashMap, fs::read, path::PathBuf};
 
 use base64::{Engine, prelude::BASE64_STANDARD};
-use macroquad::prelude::{info, warn};
+use macroquad::prelude::warn;
 use nanoserde::{DeBin, SerBin};
 use quad_net::http_request::Request;
 
@@ -119,8 +119,8 @@ impl Data {
         }
     }
     pub fn update(&mut self) {
-        if let Some(request) = &mut self.uploading {
-            if let Some(result) = request.try_recv() {
+        if let Some(request) = &mut self.uploading
+            && let Some(result) = request.try_recv() {
                 self.uploading = None;
                 self.upload_result = Some(match result {
                     Ok(data) => {
@@ -134,9 +134,8 @@ impl Data {
                     Err(e) => NetworkResult::Fail(e.to_string()),
                 })
             }
-        }
-        if let Some(request) = &mut self.list_request {
-            if let Some(result) = request.try_recv() {
+        if let Some(request) = &mut self.list_request
+            && let Some(result) = request.try_recv() {
                 self.list_request = None;
                 match result {
                     Ok(data) => {
@@ -167,7 +166,6 @@ impl Data {
                     }
                 }
             }
-        }
         self.fetch_requests.retain_mut(|(request, name)| {
             if let Some(result) = request.try_recv() {
                 match result {

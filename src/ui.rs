@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 use impl_new_derive::ImplNew;
 use macroquad::prelude::*;
 
@@ -44,10 +45,11 @@ pub struct TextInputData {
 }
 impl TextInputData {
     pub fn from_text(text: String) -> Self {
-        let mut data = Self::default();
-        data.cursor_pos = text.len();
-        data.text = text;
-        data
+        Self {
+            cursor_pos: text.len(),
+            text,
+            ..Default::default()
+        }
     }
 }
 

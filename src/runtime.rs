@@ -246,7 +246,7 @@ impl<'a> GoblinRuntime<'a> {
             } else if matches!(self.menu, RuntimeMenu::Win) {
                 let font_size = (8.0 * scale_factor) as u16;
                 draw_multiline_text_ex(
-                    &format!("Level is now verified until further\nchanges and can be uploaded!"),
+                    "Level is now verified until further\nchanges and can be uploaded!",
                     pos.x + 5.0 * scale_factor,
                     pos.y + font_size as f32 + 30.0 * scale_factor,
                     None,
@@ -313,19 +313,16 @@ impl<'a> GoblinRuntime<'a> {
         if is_key_pressed(KeyCode::E) || is_key_pressed(KeyCode::Escape) {
             self.menu.toggle();
         }
-        match result {
-            PlayerUpdateResult::GameOver => {
-                let mut level = Level {
-                    tiles: Vec::new(),
-                    width: 0,
-                    characters: Vec::new(),
-                };
-                std::mem::swap(&mut level, &mut self.level);
-                let mut new = GoblinRuntime::new(self.assets, level, self.level_details.clone());
-                new.menu = self.menu;
-                *self = new;
-            }
-            _ => {}
+        if let PlayerUpdateResult::GameOver = result {
+            let mut level = Level {
+                tiles: Vec::new(),
+                width: 0,
+                characters: Vec::new(),
+            };
+            std::mem::swap(&mut level, &mut self.level);
+            let mut new = GoblinRuntime::new(self.assets, level, self.level_details.clone());
+            new.menu = self.menu;
+            *self = new;
         }
         RuntimeResult::None
     }
