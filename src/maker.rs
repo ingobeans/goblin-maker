@@ -176,7 +176,10 @@ impl<'a> GoblinMaker<'a> {
                 }
             }
             Tool::Eraser => {
-                if self.sidebar.1 == 2 {
+                let Dragging::WorldOwned(layer, _) = self.dragging else {
+                    panic!()
+                };
+                if layer == 2 {
                     let pos = ((tx * 16) as f32, (ty * 16) as f32);
 
                     self.level.characters.retain(|f| {
@@ -187,9 +190,6 @@ impl<'a> GoblinMaker<'a> {
                 } else {
                     // general tile placing code
                     let mut tile = self.level.get_tile(tx, ty);
-                    let Dragging::WorldOwned(layer, _) = self.dragging else {
-                        panic!()
-                    };
                     tile[layer as usize] = 0;
                     self.level_renderer.set_tile(&mut self.level, tx, ty, tile);
                 }
@@ -398,16 +398,35 @@ impl<'a> GoblinMaker<'a> {
             // find what layer it is we are clicking.
 
             let tile = cursor_tile.map(|(tx, ty)| self.level.get_tile(tx, ty));
-            let layer = if let Some(tile) = tile {
+            let character = self
+                .level
+                .characters
+                .iter()
+                .find(|f| f.0 == (mouse_tile_x * 16.0, mouse_tile_y * 16.0));
+            let layer = if self.sidebar.1 == 2 && character.is_some() {
+                2
+            } else if let Some(tile) = tile {
                 if (tile[0] == 0 && tile[1] == 0) || (tile[1] != 0 && tile[0] != 0) {
-                    self.sidebar.1
+                    if character.is_some() && (tile[0] == 0 && tile[1] == 0) {
+                        2
+                    } else {
+                        if self.sidebar.1 == 2 {
+                            0
+                        } else {
+                            self.sidebar.1
+                        }
+                    }
                 } else if tile[0] == 0 {
                     1
                 } else {
                     0
                 }
             } else {
-                self.sidebar.1
+                if character.is_some() {
+                    2
+                } else {
+                    self.sidebar.1
+                }
             };
             let start = (
                 (mouse_tile_x as usize).min(self.level.width - 1),
