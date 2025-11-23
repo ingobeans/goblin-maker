@@ -28,6 +28,8 @@ pub struct Assets {
     pub pause_btn_topbar: Animation,
 
     pub person_icon: Texture2D,
+    pub time_icon: Texture2D,
+    pub download_icon: Texture2D,
 
     pub upload_btn: Animation,
     pub rename_btn: Animation,
@@ -86,6 +88,11 @@ impl Default for Assets {
             )),
 
             person_icon: load_ase_texture(include_bytes!("../assets/ui/person_icon.ase"), Some(0)),
+            time_icon: load_ase_texture(include_bytes!("../assets/ui/time_icon.ase"), Some(0)),
+            download_icon: load_ase_texture(
+                include_bytes!("../assets/ui/download_icon.ase"),
+                Some(0),
+            ),
 
             upload_btn: Animation::from_file(include_bytes!("../assets/ui/upload_btn.ase")),
             rename_btn: Animation::from_file(include_bytes!("../assets/ui/rename_btn.ase")),

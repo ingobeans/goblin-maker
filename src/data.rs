@@ -18,7 +18,7 @@ pub enum NetworkResult {
 
 pub struct Data {
     pub local: LocalData,
-    pub online_levels: Vec<String>,
+    pub online_levels: Vec<(String, u32, String)>,
     pub cached_online_levels: HashMap<String, Level>,
     pub list_request: Option<Request>,
     pub fetch_requests: Vec<(Request, String)>,
@@ -120,7 +120,16 @@ impl Data {
                 self.list_request = None;
                 match result {
                     Ok(data) => {
-                        self.online_levels = data.split(",").map(|f| f.to_string()).collect();
+                        self.online_levels = data
+                            .split(",")
+                            .map(|f| {
+                                let (name, info) = f.split_once("_").unwrap();
+                                let (downloads, date) = info.split_once("-").unwrap();
+                                let downloads: u32 = downloads.parse().unwrap();
+                                let name = name.to_string();
+                                (name, downloads, date.to_string())
+                            })
+                            .collect();
                         self.failed_list_request = false;
                         //info!("fetched level list: {:?}", self.online_levels);
                     }

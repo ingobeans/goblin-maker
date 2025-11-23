@@ -88,7 +88,7 @@ impl<'a> MainMenu<'a> {
             mouse_down = false;
         }
         if !matches!(self.level_menu, LevelMenuType::Closed) {
-            let size = vec2(156.0, 225.0);
+            let size = vec2(218.0, 225.0);
             let menu_pos = vec2(
                 actual_screen_width - 22.0 - size.x * scale_factor,
                 26.0 * scale_factor,
@@ -155,7 +155,7 @@ impl<'a> MainMenu<'a> {
                 LevelMenuType::BrowseOnline => (
                     data.online_levels
                         .iter()
-                        .map(|f| f.split_once("-").unwrap().0.to_string())
+                        .map(|f| f.0.split_once("-").unwrap().0.to_string())
                         .collect(),
                     "Online Levels",
                 ),
@@ -286,12 +286,59 @@ impl<'a> MainMenu<'a> {
                             ..Default::default()
                         },
                     );
-                    let author = data.online_levels[i].split_once("-").unwrap().1;
+                    let author = data.online_levels[i].0.split_once("-").unwrap().1;
 
-                    let font_size = (10.0 * scale_factor) as u16;
+                    let font_size = (8.0 * scale_factor) as u16;
                     draw_text_ex(
                         author,
                         btn.pos.x + 10.0 * scale_factor,
+                        btn.pos.y + size.y * scale_factor - 4.0 * scale_factor,
+                        TextParams {
+                            color: LIGHTGRAY,
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+
+                    draw_texture_ex(
+                        &self.assets.time_icon,
+                        btn.pos.x - 33.0 * scale_factor + size.x * scale_factor,
+                        btn.pos.y + 2.0 * scale_factor,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(6.0, 6.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
+                    draw_text_ex(
+                        &data.online_levels[i].2,
+                        btn.pos.x - 33.0 * scale_factor
+                            + size.x * scale_factor
+                            + 8.0 * scale_factor,
+                        btn.pos.y + 7.0 * scale_factor,
+                        TextParams {
+                            color: LIGHTGRAY,
+                            font_size,
+                            font: Some(&self.assets.font),
+                            ..Default::default()
+                        },
+                    );
+                    draw_texture_ex(
+                        &self.assets.download_icon,
+                        btn.pos.x - 33.0 * scale_factor + size.x * scale_factor,
+                        btn.pos.y + size.y * scale_factor - 9.0 * scale_factor,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(6.0, 6.0) * scale_factor),
+                            ..Default::default()
+                        },
+                    );
+                    draw_text_ex(
+                        &data.online_levels[i].1.to_string(),
+                        btn.pos.x - 33.0 * scale_factor
+                            + size.x * scale_factor
+                            + 8.0 * scale_factor,
                         btn.pos.y + size.y * scale_factor - 4.0 * scale_factor,
                         TextParams {
                             color: LIGHTGRAY,
@@ -323,7 +370,7 @@ impl<'a> MainMenu<'a> {
                 if !unallow_click && btn.is_hovered() && mouse_down {
                     match self.level_menu {
                         LevelMenuType::BrowseOnline => {
-                            let name = data.online_levels[i].to_string();
+                            let name = data.online_levels[i].0.to_string();
                             if let Some(level) = data.cached_online_levels.get(&name) {
                                 let (name, author) = name.split_once("-").unwrap();
                                 return MenuUpdateResult::PlayOnline(
