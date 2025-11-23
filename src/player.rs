@@ -118,7 +118,7 @@ impl Player {
         }
 
         if !self.died && self.victory == 0.0 {
-            self.camera_pos = self.pos;
+            self.camera_pos = self.pos + vec2(0.0, -16.0);
         } else if self.died {
             if self.pos.y > self.camera_pos.y + SCREEN_HEIGHT / 2.0 {
                 return PlayerUpdateResult::GameOver;
