@@ -7,10 +7,7 @@ use macroquad::prelude::warn;
 use nanoserde::{DeBin, SerBin};
 use quad_net::http_request::Request;
 
-use crate::level::Level;
-
-//pub const SERVER_BASE_ADRESS: &str = "https://goblin-server.ingobeans.hackclub.app";
-pub const SERVER_BASE_ADRESS: &str = "http://127.0.0.1:5462";
+use crate::{level::Level, utils::DEBUG_ARGS};
 
 pub enum NetworkResult {
     Success,
@@ -56,7 +53,7 @@ impl Data {
         self.uploading = Some(
             quad_net::http_request::RequestBuilder::new(&format!(
                 "{}/upload/{name}-{author}",
-                SERVER_BASE_ADRESS
+                DEBUG_ARGS.server_base_url
             ))
             .body(&base64)
             .method(quad_net::http_request::Method::Post)
@@ -67,7 +64,7 @@ impl Data {
         self.fetch_requests.push((
             quad_net::http_request::RequestBuilder::new(&format!(
                 "{}/get/{name}",
-                SERVER_BASE_ADRESS
+                DEBUG_ARGS.server_base_url
             ))
             .send(),
             name.to_string(),
@@ -76,7 +73,7 @@ impl Data {
     pub fn update_level_list(&mut self) {
         self.list_request = Some(
             quad_net::http_request::RequestBuilder::new(
-                &(SERVER_BASE_ADRESS.to_string() + "/list"),
+                &(DEBUG_ARGS.server_base_url.to_string() + "/list"),
             )
             .send(),
         );
@@ -89,7 +86,7 @@ impl Data {
             fetch_requests: Vec::new(),
             list_request: Some(
                 quad_net::http_request::RequestBuilder::new(
-                    &(SERVER_BASE_ADRESS.to_string() + "/list"),
+                    &(DEBUG_ARGS.server_base_url.to_string() + "/list"),
                 )
                 .send(),
             ),

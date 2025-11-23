@@ -31,16 +31,25 @@ pub struct DebugArgs {
     pub speedometer: bool,
     pub fps_counter: bool,
     pub uncapped_fps: bool,
+    pub server_base_url: String,
 }
 
 pub static DEBUG_ARGS: LazyLock<DebugArgs> = LazyLock::new(|| {
     #[cfg(debug_assertions)]
     {
         let args: Vec<String> = std::env::args().collect();
+        let mut url = "https://goblin-server.ingobeans.hackclub.app".to_string();
+        for arg in args.iter() {
+            if arg.starts_with("url=") {
+                let u = arg.trim_start_matches("url=");
+                url = u.to_string();
+            }
+        }
         DebugArgs {
             speedometer: args.contains(&"spd".to_string()),
             fps_counter: args.contains(&"fps".to_string()),
             uncapped_fps: args.contains(&"uncap".to_string()),
+            server_base_url: url,
         }
     }
     #[cfg(not(debug_assertions))]
