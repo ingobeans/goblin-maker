@@ -78,8 +78,12 @@ def upload(id: str):
         return "error:missing author information"
     if len(id.split("-")[0]) > 20:
         return "error:too long name"
+    if len(id.split("-")[0].strip()) == 0:
+        return "error:level name can not be empty"
     if len(id.split("-")[1]) > 25:
         return "error:too long author name"
+    if len(id.split("-")[1].strip()) == 0:
+        return "error:no author name specified"
     data = request.data
     if data is None:
         return "error:missing data!"
