@@ -55,10 +55,11 @@ impl<'a> GameManager<'a> {
                             .level_details
                             .as_ref()
                             .unwrap();
-                        self.data
-                            .local
-                            .completed_online_levels
-                            .push(format!("{}-{}", details.0, details.1));
+                        let id = format!("{}-{}", details.0, details.1);
+                        if !self.data.local.completed_online_levels.contains(&id) {
+                            self.data.local.completed_online_levels.push(id);
+                            self.data.local.store();
+                        }
                     }
                 }
                 self.runtime = None;
