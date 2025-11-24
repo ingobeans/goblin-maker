@@ -4,6 +4,8 @@ from flask_cors import CORS, cross_origin
 from datetime import datetime
 import os, json, time
 
+version = "0.2.5"
+
 app = Flask(__name__)
 cors = CORS(app)
 
@@ -31,7 +33,7 @@ def dump_details():
 @app.route("/")
 @cross_origin()
 def home():
-    return "<p>hello! this is the backend server for my videogame called 'Goblin Maker'</p>\n<p>you can try it <a href='https://github.com/ingobeans/goblin-maker'>here</a></p>"
+    return f"<p>hello! this is the backend server for my videogame called 'Goblin Maker'</p>\n<p>you can try it <a href='https://github.com/ingobeans/goblin-maker'>here</a></p><br><p>server version: {version}</p>"
 @app.route("/list")
 @cross_origin()
 def list():
