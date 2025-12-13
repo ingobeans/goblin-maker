@@ -35,6 +35,13 @@
   <script src="quad-storage.js.untracked"></script>
   <script src="quad-net.js.untracked"></script>
   <script>
+    // prevent middle mouse scroll
+    document.body.onmousedown = function (e) {
+      if (e.button == 1) {
+        e.preventDefault();
+        return false;
+      }
+    }
     // load wasm
     load('goblin-maker.wasm');
   </script>
