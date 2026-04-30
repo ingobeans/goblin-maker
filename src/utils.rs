@@ -34,7 +34,7 @@ pub struct DebugArgs {
     pub server_base_url: String,
 }
 
-const DEFAULT_BASE_URL: &str = "https://goblin-server.ingobeans.hackclub.app";
+const DEFAULT_BASE_URL: &str = "https://goblinserver.irispond.net";
 
 pub static DEBUG_ARGS: LazyLock<DebugArgs> = LazyLock::new(|| {
     #[cfg(debug_assertions)]
